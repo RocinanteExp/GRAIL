@@ -19,7 +19,7 @@ typedef struct{
 int N; dimensione
 Node* nodes;
 int* roots;
-bitmap per roots
+int n_roots;
 } Graph;
 
 
@@ -37,22 +37,22 @@ bitmap per roots
 Stato: F= Finito, P =Parziale, in lavorazione
 | Funzione | .h | Stato|
 | ---------- | ---- | --------- |
-| Graph* initGraph(int d) | Graph.h | |
-| Node* createNode(int d,int n_childrens) | Graph.h | |
-| void destroyNode(Node* node)   | Graph.h | |
+| Graph* initGraph(int n_nodes,int d) | Graph.h | |
+| Node* createNode(int d,int n_childrens) | Graph.h | F |
+| Graph* graph_create(char* graph_file)|Grapf.h| |
+| void destroyNode(Node* node)   | Graph.h | F |
 | void destroyGraph(Graph* node) | Graph.h | |
-| void readGraph(char* graph_file,Graph* graph) | Graph.h	| |
-| Label createLabel(int l,int r) | Label.h | D |
-| int includeLabel(Label l1,Label l2)| Label.h | D |
-| void initBitset(int n) | BitSet.h | |
-| void destroyBitset(Bitset* bitset) | BitSet.h | |
-| void setAll()| BitSet.h| |
-| void set(size_t pos)| BitSet.h| |
-| void reset(size_t pos)| BitSet.h| |
-| void resetAll()| BitSet.h| |
+| Label createLabel(int l,int r) | Label.h | F |
+| int includeLabel(Label l1,Label l2)| Label.h | F |
+| void initBitset(int n) | BitSet.h | F |
+| void destroyBitset(Bitset* bitset) | BitSet.h | F |
+| void setAll()| BitSet.h| F |
+| void set(size_t pos)| BitSet.h| F |
+| void reset(size_t pos)| BitSet.h| F |
+| void resetAll()| BitSet.h| F |
 | void flip(size_t pos)| BitSet.h| |
 | void flipAll()| BitSet.h| |
-| int isSet(size_t pos)| BitSet.h| | 
+| int isSet(size_t pos)| BitSet.h| F | 
 | int isAllSet()| BitSet.h| | 
 | int isNoneSet()| BitSet.h| | 
 | int isAnySet()| BitSet.h| | 
