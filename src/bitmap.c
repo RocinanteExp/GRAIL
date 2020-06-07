@@ -3,11 +3,11 @@
 
 static int SIZE_CHUNK = (sizeof(int) * 8);
 
-bitmap* bitmap_create(size_t num_bits){
+Bitmap* bitmap_create(size_t num_bits){
    //computing the ceiling of num_bits / SIZE_CHUNK 
    size_t array_length = (num_bits + SIZE_CHUNK - 1) / SIZE_CHUNK;
 
-   bitmap* ret_bitmap = malloc(sizeof(bitmap));
+   Bitmap* ret_bitmap = malloc(sizeof(Bitmap));
    if(ret_bitmap == NULL){
        return NULL;
    }
@@ -25,7 +25,7 @@ bitmap* bitmap_create(size_t num_bits){
 
 }
 
-void bitmap_set_bit(bitmap* bitmap, size_t pos){
+void bitmap_set_bit(Bitmap* bitmap, size_t pos){
    
    if(pos < 0 || pos >= bitmap->num_bits)
        return;
@@ -34,7 +34,7 @@ void bitmap_set_bit(bitmap* bitmap, size_t pos){
 
 }
 
-void bitmap_clear_bit(bitmap* bitmap, size_t pos){
+void Bitmap_clear_bit(Bitmap* bitmap, size_t pos){
 
    if(pos < 0 || pos >= bitmap->num_bits)
        return;
@@ -43,8 +43,7 @@ void bitmap_clear_bit(bitmap* bitmap, size_t pos){
 
 }
 
-// TODO check if pos is out of boundary. What to return when pos is out of boundary
-int bitmap_test_bit(bitmap* bitmap, size_t pos){
+int bitmap_test_bit(Bitmap* bitmap, size_t pos){
 
     if(pos < 0 || pos >= bitmap->num_bits)
         return -1;
@@ -62,7 +61,7 @@ int bitmap_test_bit(bitmap* bitmap, size_t pos){
 
 }
 
-void bitmap_set_all(bitmap* bitmap){
+void bitmap_set_all(Bitmap* bitmap){
     
    int allOnes = -1;
 
@@ -72,7 +71,7 @@ void bitmap_set_all(bitmap* bitmap){
 
 }
 
-void bitmap_clear_all(bitmap* bitmap){
+void bitmap_clear_all(Bitmap* bitmap){
     
    int allZeros = 0;
 
@@ -82,7 +81,7 @@ void bitmap_clear_all(bitmap* bitmap){
 
 }
 
-void bitmap_destroy(bitmap* bitmap){
+void bitmap_destroy(Bitmap* bitmap){
     
     free(bitmap->bitset);
     free(bitmap);

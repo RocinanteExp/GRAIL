@@ -1,8 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "Label.h"
-#define TRUE 1
-#define FALSE 0
+#include "label.h"
 
 Label initLabel(int l,int r)
 {
@@ -12,9 +10,9 @@ Label initLabel(int l,int r)
     return x;
 }
 
-int includeLabel(Label l1,Label l2)
+bool includeLabel(Label l1,Label l2)
 {
     if(l1.left<l2.left || l1.right>l2.right)
-        return FALSE;
-    return TRUE;
+        return false;
+    return true;
 }

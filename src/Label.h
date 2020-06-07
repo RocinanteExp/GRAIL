@@ -1,5 +1,6 @@
 #ifndef LABEL_H_GUARD
 #define LABEL_H_GUARD
+#include <stdbool.h>
 
 typedef struct label_s
 {
@@ -8,5 +9,6 @@ typedef struct label_s
 //Create a new label
 Label initLabel(int l,int r);
 //see if l1 is included in l2
-int includeLabel(Label l1,Label l2); 
+bool includeLabel(Label l1,Label l2); 
+
 #endif
