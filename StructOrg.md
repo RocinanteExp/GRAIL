@@ -48,8 +48,8 @@ D = Deprecato
 | void graph_destroy(Graph* node)                   | Graph.h   | F |
 | Node* node_create(int d,int n_childrens)          | Graph.h   | F |
 | void node_destroy(Node* node)                     | Graph.h   | F |
-| Label createLabel(int l,int r)                    | Label.h   | F |
-| int includeLabel(Label l1,Label l2)               | Label.h   | F |
+| Label label_init(int l,int r)                     | Label.h   | F |
+| bool label_include(Label l1,Label l2)             | Label.h   | F |
 | Bitmap* bitmap_create(size_t num_bits)            | Bitset.h  | F | 
 | void bitmap_destroy(Bitmap* bitmap)               | BitSet.h  | F |
 | void bitmap_set_all(Bitmap* bitmap)               | BitSet.h  | F |
