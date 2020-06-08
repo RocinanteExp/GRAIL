@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "label.h"
+#include "Label.h"
 
 Label label_init(int l,int r)
 {

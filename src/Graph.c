@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "graph.h"
+#include "Graph.h"
 #include "bitmap.h"
 #define DEBUG 0 
 
