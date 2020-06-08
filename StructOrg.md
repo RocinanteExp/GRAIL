@@ -1,61 +1,67 @@
 # SDPProjectQ2 Organizzazione struct e files
-
+```
 ## Structs
-typedef struct bitset_s{
-int* bitset;
-size_t size;
-} BitSet
+typedef struct bitmap_s{
+    uint32_t* bitset;
+    size_T length;
+    size_t size;
+} Bitmap
+
 typedef struct label_s{
-int left,right;
+    int left,right;
 } Label;
+
 typedef struct node_s{
-uint_8 id;
-struct node_s ** childrens;
-Label* intervals;
-bitmap d bits
+  uint32_t id;
+  uint32_t* children;
+  uint32_t num_children;
+  Label* intervals;
+  Bitmap* interval_bitmap;
 } Node;
 
 typedef struct{
-int N; dimensione
-Node* nodes;
-int* roots;
-int n_roots;
+    uint32_t num_nodes;
+    uint32_t num_root_nodes;
+    uint32_t num_intervals;
+    uint32_t* root_nodes;
+    Node** nodes;
 } Graph;
-
+```
 
 ## Tabella .h
 ### Struct
 ### 
 | Struct | .h |
 | -------- | ---- |
-| Graph | Graph.h |
-| Node  | Graph.h |
-| Label | Label.h |
-| BitSet | BitSet.h |
+| Graph | graph.h |
+| Node  | graph.h |
+| Label | label.h |
+| Bitmap | bitmap.h |
 ### 
 ### Funzioni
-Stato: F= Finito, P =Parziale, in lavorazione
-| Funzione | .h | Stato|
+Stato: F = Finito, P = Parziale, in lavorazione
+D = Deprecato
+| Funzione                                          | .h        | Stato |
 | ---------- | ---- | --------- |
-| Graph* initGraph(int n_nodes,int d) | Graph.h | |
-| Node* createNode(int d,int n_childrens) | Graph.h | F |
-| Graph* graph_create(char* graph_file)|Grapf.h| |
-| void destroyNode(Node* node)   | Graph.h | F |
-| void destroyGraph(Graph* node) | Graph.h | |
-| Label createLabel(int l,int r) | Label.h | F |
-| int includeLabel(Label l1,Label l2)| Label.h | F |
-| void initBitset(int n) | BitSet.h | F |
-| void destroyBitset(Bitset* bitset) | BitSet.h | F |
-| void setAll()| BitSet.h| F |
-| void set(size_t pos)| BitSet.h| F |
-| void reset(size_t pos)| BitSet.h| F |
-| void resetAll()| BitSet.h| F |
-| void flip(size_t pos)| BitSet.h| |
-| void flipAll()| BitSet.h| |
-| int isSet(size_t pos)| BitSet.h| F | 
-| int isAllSet()| BitSet.h| | 
-| int isNoneSet()| BitSet.h| | 
-| int isAnySet()| BitSet.h| | 
+| Graph* graph_init(char* graph_file)               | Grapf.h   | F |
+| Graph* graph_create(int n_nodes,int d)            | Graph.h   | F |
+| void graph_destroy(Graph* node)                   | Graph.h   | F |
+| Node* node_create(int d,int n_childrens)          | Graph.h   | F |
+| void node_destroy(Node* node)                     | Graph.h   | F |
+| Label label_init(int l,int r)                     | Label.h   | F |
+| bool label_include(Label l1,Label l2)             | Label.h   | F |
+| Bitmap* bitmap_create(size_t num_bits)            | Bitset.h  | F | 
+| void bitmap_destroy(Bitmap* bitmap)               | BitSet.h  | F |
+| void bitmap_set_all(Bitmap* bitmap)               | BitSet.h  | F |
+| void bitmap_set_bit(Bitmap* bitmap, size_t pos)   | BitSet.h  | F |
+| void bitmap_clear_bit(Bitmap* bitmap, size_t pos) | BitSet.h  | F |
+| void bitmap_clear_all(Bitmap* bitmap))            | BitSet.h  | F |
+| int bitmap_test_bit(Bitmap* bitmap, size_t pos)   | BitSet.h  | F | 
+| int isAllSet()                                    | BitSet.h  | | 
+| int isNoneSet()                                   | BitSet.h  | | 
+| int isAnySet()                                    | BitSet.h  | | 
+| void flip(size_t pos)                             | BitSet.h  | |
+| void flipAll()                                    | BitSet.h  | |
 ### 
 
 ### tips
