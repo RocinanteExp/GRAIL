@@ -62,3 +62,5 @@ Stato: F= Finito, P =Parziale, in lavorazione
 per compilare con librerie personalizzate usare:
 gcc main.c -o main Label.c -lm
 vedere : https://gribblelab.org/CBootCamp/12_Compiling_linking_Makefile_header_files.html#org6e32cd2 per maggiori dettagli
+per compilare i tests esempio
+gcc -Wall label_test.c -o test Label.c -lcheck -lm -lpthread -lrt -lsubunit
