@@ -23,8 +23,8 @@ int main(int argc, char* argv[])
     int i=0;
     char* str="0: #";
     set_childrens(x,str);
-    for(;i<x->num_childrens;i++)
-        printf("%d ",x->childrens[i]);
+    for(;i<x->num_children;i++)
+        printf("%d ",x->children[i]);
     printf("\n");
     destroy_node(x);
     return 0;

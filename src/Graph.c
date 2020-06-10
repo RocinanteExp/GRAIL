@@ -36,11 +36,11 @@ void node_set_children(Node* node, char* str)
     uint32_t n=0;
     uint32_t i=0;
     uint32_t str_length = strlen(str);
-    char* s = malloc(str_length + 1);
-    char* context;
+    char* s=malloc(sizeof(char)*(str_length+1));
+    //char* context;
     char* tok;
-    errno_t error = strcpy_s(s, str_length + 1, str);
-    if(error != 0){
+     if(strcpy(s, str)==NULL)
+     {
         fprintf(stderr, "ERROR: strcpy set_children\n");
         return; 
     }
@@ -49,27 +49,23 @@ void node_set_children(Node* node, char* str)
     printf("[%s] [%s]\n", s, str);
     printf("FINE PRIMA STAMPA\n");
 #endif
-    tok=strtok_s(s, ": #\n", &context);
-    while((tok = strtok_s(NULL, ": #\n", &context)) != NULL)
+    tok=strtok(s, ": #\n\r");
+    while((tok = strtok(NULL, ": #\n\r")) != NULL)
     {
         n++;
-    }
-
+    } 
     node->children = (uint32_t*) calloc(n, sizeof(uint32_t));
-
-    error = strcpy_s(s, str_length + 1, str);
-    if(error != 0){
+     if(strcpy(s, str)==NULL)
+     {
         fprintf(stderr, "ERROR: strcpy set_children\n");
         return; 
     }
-
-    tok = strtok_s(s, ": #", &context);
-    while((tok = strtok_s(NULL, ": #\n", &context)) != NULL && i < n)
+    tok = strtok(s, ": #\n\r");
+    while((tok = strtok(NULL, ": #\n\r")) != NULL && i < n)
     {
         node->children[i] = (unsigned int) atoi(tok);
         i++;
     }
-
     node->num_children = n;
 
 #if DEBUG
@@ -85,8 +81,8 @@ Graph* graph_create(char *filepath, int num_intervals){
     const uint16_t BUFF_SIZE = 1024; 
 
     FILE *fin;
-    errno_t error = fopen_s(&fin, filepath, "r");
-    if(error != 0){
+    fin=fopen( filepath, "r");
+   if(fin == NULL){
         fprintf(stdout, "ERROR opening file %s at graph_create\n", filepath);
         return NULL;
     }
@@ -100,8 +96,7 @@ Graph* graph_create(char *filepath, int num_intervals){
     uint32_t num_nodes;
     char curr_line[BUFF_SIZE];
     fgets(curr_line, BUFF_SIZE, fin);
-    sscanf_s(curr_line, "%d", &num_nodes);
-    
+    sscanf(curr_line, "%d", &num_nodes);
     p_graph->nodes = malloc(num_nodes * sizeof(Node*));
     if(p_graph->nodes == NULL){
         free(p_graph);
@@ -123,8 +118,7 @@ Graph* graph_create(char *filepath, int num_intervals){
             free(p_graph->nodes);
             free(p_graph);
             return NULL;
-        }
-            
+        }   
         node_set_children(curr_node, curr_line);
         p_graph->nodes[i] = curr_node;
     
