@@ -70,6 +70,10 @@ static uint32_t query_read_from_file(char *filepath, int32_t *queries){
   */
 bool query_is_reachable(int32_t source_id, int32_t dest_id, Graph* graph){
 
+
+    if(source_id == dest_id)
+        return true;
+
     Node* src_node = graph->nodes[source_id];
     Node* dst_node = graph->nodes[dest_id];
     uint32_t num_intervals = graph->num_intervals;
