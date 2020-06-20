@@ -39,4 +39,5 @@ void graph_print(Graph *graph, bool verbose, uint32_t index_node);
  * */
 void node_print(Node *node, bool verbose); 
 
+void graph_randomize_labelling_sequential(Graph *graph, int num_intevals);
 #endif

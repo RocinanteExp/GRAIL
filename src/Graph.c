@@ -7,13 +7,15 @@
 
 Node* node_create(int d, unsigned int id)
 {
-
+    int i=0;
     Node* node = malloc(sizeof(Node));
     if(node == NULL)
         return NULL;
     node->num_children=0;
     node->id = id;
     node->intervals = malloc(sizeof(Label)*d);
+    for(i=0;i<d;i++)
+        node->intervals[i]= label_init(UINT32_MAX,UINT32_MAX);
     node->interval_bitmap = bitmap_create(d);
     node->children = NULL;
     

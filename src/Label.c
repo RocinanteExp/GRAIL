@@ -1,8 +1,9 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include "Label.h"
 
-Label label_init(int l,int r)
+Label label_init(uint32_t l,uint32_t r)
 {
     Label x;
     x.left=l;
