@@ -5,19 +5,21 @@
 #include "bitmap.h"
 #define DEBUG 0 
 
-Node* node_create(int d, unsigned int id)
+Node* node_create(uint32_t num_intervals, uint32_t node_id)
 {
-    int i=0;
     Node* node = malloc(sizeof(Node));
     if(node == NULL)
         return NULL;
-    node->num_children=0;
-    node->id = id;
-    node->intervals = malloc(sizeof(Label)*d);
-    for(i=0;i<d;i++)
+
+    node->intervals = malloc(num_intervals * sizeof(Label));
+    for(int i = 0; i < num_intervals; i++)
         node->intervals[i]= label_init(UINT32_MAX,UINT32_MAX);
-    node->interval_bitmap = bitmap_create(d);
+
+    node->id = node_id;
     node->children = NULL;
+    node->num_children = 0;
+    node->interval_bitmap = bitmap_create(num_intervals);
+    node->num_intervals = num_intervals;
     
     return node;
 
@@ -41,8 +43,8 @@ void node_set_children(Node* node, char* str)
     char* s=malloc(sizeof(char)*(str_length+1));
     //char* context;
     char* tok;
-     if(strcpy(s, str)==NULL)
-     {
+    if(strcpy(s, str) == NULL)
+    {
         fprintf(stderr, "ERROR: strcpy set_children\n");
         return; 
     }
@@ -51,14 +53,14 @@ void node_set_children(Node* node, char* str)
     printf("[%s] [%s]\n", s, str);
     printf("FINE PRIMA STAMPA\n");
 #endif
-    tok=strtok(s, ": #\n\r");
+    tok = strtok(s, ": #\n\r");
     while((tok = strtok(NULL, ": #\n\r")) != NULL)
     {
         n++;
     } 
     node->children = (uint32_t*) calloc(n, sizeof(uint32_t));
-     if(strcpy(s, str)==NULL)
-     {
+    if(strcpy(s, str) == NULL)
+    {
         fprintf(stderr, "ERROR: strcpy set_children\n");
         return; 
     }
@@ -83,8 +85,8 @@ Graph* graph_create(char *filepath, int num_intervals){
     const uint16_t BUFF_SIZE = 1024; 
 
     FILE *fin;
-    fin=fopen( filepath, "r");
-   if(fin == NULL){
+    fin = fopen( filepath, "r");
+    if(fin == NULL){
         fprintf(stdout, "ERROR opening file %s at graph_create\n", filepath);
         return NULL;
     }
@@ -136,7 +138,7 @@ Graph* graph_create(char *filepath, int num_intervals){
     //finding the root nodes of the graph
     //TODO do it a better way. Add checks.
     uint32_t next = 0;
-    uint16_t MAGIC_NUMBER = 128;
+    uint16_t MAGIC_NUMBER = 512;
     p_graph->root_nodes = malloc(MAGIC_NUMBER * sizeof(uint32_t));
     for(int i = 0; i < p_graph->num_nodes; i++){
         if(!bitmap_test_bit(bitmap, i)){
@@ -169,22 +171,27 @@ void graph_destroy(Graph *graph){
 
 }
 
-//TODO implement possibility to print a single node instead of all the graph
 void graph_print(Graph *graph, bool verbose, uint32_t index_node){
 
     fprintf(stdout, "PRINTING GRAPH\n");
-    int i = 0;
-    while(i < graph->num_nodes){
-        node_print(graph->nodes[i++], false);
+
+    if(index_node == -1){
+        int i = 0;
+        while(i < graph->num_nodes){
+            node_print(graph->nodes[i++], verbose);
+        }
+
+        fprintf(stdout, "ROOT NODES\n");
+        for(int i = 0; i < graph->num_root_nodes; i++){
+            fprintf(stdout, "%d ", graph->root_nodes[i]);
+        }
+
         fprintf(stdout, "\n");
     }
-
-    fprintf(stdout, "ROOT NODES\n");
-    for(int i = 0; i < graph->num_root_nodes; i++){
-        fprintf(stdout, "%d ", graph->root_nodes[i]);
+    else if (index_node > 0){
+        node_print(graph->nodes[index_node], verbose); 
     }
 
-    fprintf(stdout, "\n");
     fprintf(stdout, "FINISHED PRINTING GRAPH\n");
 
 }
@@ -192,10 +199,20 @@ void graph_print(Graph *graph, bool verbose, uint32_t index_node){
 //TODO implement a "verbose" version of printing a node
 void node_print(Node *node, bool verbose){
 
-    printf("%d: ", node->id);
+    fprintf(stdout, "%d: ", node->id);
     for(int i = 0; i < node->num_children; i++){
         printf("%d ", node->children[i]);
     }
-    printf("#");
+    
+    fprintf(stdout, "# ");
+
+    if(verbose){
+        fprintf(stdout, "\nLABELS: ");
+        for(int i = 0; i < node->num_intervals; i++){
+            printf("[%d %d]", node->intervals[i].left, node->intervals[i].right);
+        }
+    }
+
+    fprintf(stdout, "\n");
 
 }
