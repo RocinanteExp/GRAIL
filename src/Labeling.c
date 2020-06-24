@@ -30,6 +30,7 @@ static uint32_t get_ramdom_order_children(Node *node,Bitmap * child_map)
     }    
     return j;
 }
+// Random visit fuction that implementi the get_ramdom_order_children fuction idx indicates the current label that is being set for the node
 static void  graph_random_visit_sequential(Graph *graph,Bitmap* visited_nodes,uint32_t node_id, uint32_t idx)
 {
     int j=0;
@@ -59,7 +60,7 @@ static void  graph_random_visit_sequential(Graph *graph,Bitmap* visited_nodes,ui
     r++;
     bitmap_destroy(child_map);
 }
-void graph_randomize_labelling_sequential(Graph *graph, int num_intevals)
+void graph_randomize_labelling_sequential(Graph *graph, uint32_t num_intevals)
 {
     uint32_t idx=0;
     uint32_t num_roots=0;
@@ -75,12 +76,16 @@ void graph_randomize_labelling_sequential(Graph *graph, int num_intevals)
         printf("ERROR IN ALLOCATING BITMAP IN: graph_randomize_labelling\n");
         exit(-1);
     }
+    // cycle for  the number of labels for each node
     for(idx=0;idx<num_intevals;idx++)
     {
+        //inizialize values
         r=1;
+        num_roots=0;
         bitmap_clear_all(roots_map);
         bitmap_clear_all(nodes_map);
         uint32_t i=0;
+        //visit all roots
         while(num_roots<graph->num_root_nodes)
         {
             i=get_ramdom_order_roots(graph,roots_map);

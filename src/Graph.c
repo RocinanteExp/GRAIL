@@ -199,3 +199,20 @@ void node_print(Node *node, bool verbose){
     printf("#");
 
 }
+
+void labels_print(Graph *graph)
+{
+    int i=0;
+    printf("PRINT GRAPH LABELS\n");
+    for(i=0;i<graph->num_nodes;i++)
+    {
+        Node* node = graph->nodes[i];
+        int j=0;
+        printf("#%d :",node->id);
+        for(j=0;j<graph->num_intervals;j++)
+            {
+                printf(" (%d,%d)",node->intervals[j].left,node->intervals[j].right);
+            }
+            printf(" #\n");
+    }
+}

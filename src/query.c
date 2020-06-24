@@ -141,9 +141,9 @@ static bool dfs(int32_t source_id, int32_t dest_id, Graph* graph){
 
 }
 
-int main(int argc, char **argv){
+/*int main(int argc, char **argv){
     
     Graph* graph = graph_create("../test1_100.gra", 2);
     query_init("../test1_50.que", graph); 
 
-}
+}*/

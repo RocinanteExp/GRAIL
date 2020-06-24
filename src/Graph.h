@@ -38,6 +38,5 @@ void graph_print(Graph *graph, bool verbose, uint32_t index_node);
  * print a node. If verbose is true, it is a verbose version of the print. The last part is a TODO
  * */
 void node_print(Node *node, bool verbose); 
-
-void graph_randomize_labelling_sequential(Graph *graph, int num_intevals);
+void labels_print(Graph *graph);
 #endif
