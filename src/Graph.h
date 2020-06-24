@@ -4,8 +4,7 @@
 #include "Label.h"
 #include <stdint.h>
 
-typedef struct node_s
-{
+typedef struct node_s{
   uint32_t id;
   uint32_t* children;
   uint32_t num_children;
