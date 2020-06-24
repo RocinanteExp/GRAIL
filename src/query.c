@@ -1,8 +1,10 @@
 #include "query.h"
+#include "Labeling.h"
 #include <stdlib.h>
 #include <stdio.h>
 #define MAX_LENGTH_BUFFER 4096 
 #define MAX_LENGTH_QUERY 8192 
+#define DEBUG 1 
 
 /* fill the "queries" with the query read from the file at filepath
  * To access the ith query stored in "queries" use:
@@ -52,7 +54,9 @@ static uint32_t query_read_from_file(char *filepath, int32_t *queries){
    size_t next = 0;
    while(fgets(buff, MAX_LENGTH_BUFFER, fp)){
        if(sscanf(buff, "%d %d", &queries[next * 2], &queries[next * 2 + 1]) == 2){  
-           fprintf(stdout, "next: %u -> %d %d\n", next, queries[next * 2], queries[next * 2 + 1]);
+#if DEBUG
+           fprintf(stdout, "next: %I64u -> %d %d\n", next + 1, queries[next * 2], queries[next * 2 + 1]);
+#endif
            next++;
        }
        else{
@@ -143,7 +147,10 @@ static bool dfs(int32_t source_id, int32_t dest_id, Graph* graph){
 
 /*int main(int argc, char **argv){
     
-    Graph* graph = graph_create("../test1_100.gra", 2);
-    query_init("../test1_50.que", graph); 
+    Graph* graph = graph_create("grafo.gra", 1);
+    graph_print(graph, true, -1); 
+    graph_randomize_labelling_sequential(graph, 1);
+    graph_print(graph, true, -1); 
+    query_init("queries.que", graph); 
 
 }*/

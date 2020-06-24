@@ -1,6 +1,6 @@
 # SDPProjectQ2 Organizzazione struct e files
-```
 ## Structs
+```
 typedef struct bitmap_s{
     uint32_t* bitset;
     size_T length;
@@ -17,6 +17,7 @@ typedef struct node_s{
   uint32_t num_children;
   Label* intervals;
   Bitmap* interval_bitmap;
+  uint32_t num_intervals;
 } Node;
 
 typedef struct{
