@@ -1,5 +1,5 @@
 #include "query.h"
-#include "Labeling.h"
+#include "labelling.h"
 #include <stdlib.h>
 #include <stdio.h>
 #define MAX_LENGTH_BUFFER 4096 
@@ -145,12 +145,19 @@ static bool dfs(int32_t source_id, int32_t dest_id, Graph* graph){
 
 }
 
-/*int main(int argc, char **argv){
+int main(int argc, char **argv){
     
-    Graph* graph = graph_create("grafo.gra", 1);
-    graph_print(graph, true, -1); 
-    graph_randomize_labelling_sequential(graph, 1);
-    graph_print(graph, true, -1); 
-    query_init("queries.que", graph); 
+    //Graph* graph = graph_create("../grafo20.gra", 1);
+    Graph* graph = graph_create("v500000e1000.gra", 5);
+    //graph_print(graph, true, -1); 
+    graph_print(graph, true, 203); 
+    graph_print(graph, true, 8888); 
+    graph_print(graph, true, 123456); 
+    graph_print(graph, true, 399999); 
+    graph_print(graph, true, 400000); 
+    graph_print(graph, true, 499999); 
+    //graph_randomize_labelling_sequential(graph, 1);
+    //graph_print(graph, true, -1); 
+    //query_init("queries.que", graph); 
 
-}*/
+}

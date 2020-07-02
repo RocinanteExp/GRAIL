@@ -1,4 +1,4 @@
-#include "Graph.h"
+#include "graph.h"
 #include <check.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -26,11 +26,11 @@ Suite* graph_suite(void)
 
 int main(void)
 {
-   int n_fail;
+    int n_fail;
     Suite* s;
     SRunner *sr;
-   Graph *graph = graph_create("grafo.gra", 2);
-   graph_print(graph, false, -1);
+    Graph *graph = graph_create("grafo.gra", 2);
+    graph_print(graph, false, -1);
     s=graph_suite();
     sr=srunner_create(s);
     srunner_run_all(sr,CK_NORMAL);

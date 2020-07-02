@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
-#include "Label.h"
+#include "label.h"
 
 Label label_init(uint32_t l,uint32_t r)
 {

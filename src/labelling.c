@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "Labeling.h"
-#include "Graph.h"
+#include "labeling.h"
+#include "graph.h"
 #include "bitmap.h"
 #include <stdint.h>
 #define DEBUG 1 

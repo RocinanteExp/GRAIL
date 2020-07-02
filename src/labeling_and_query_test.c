@@ -1,4 +1,4 @@
-#include "Labeling.h"
+#include "labelling.h"
 #include "query.h"
 #include <check.h>
 #include <stdlib.h>

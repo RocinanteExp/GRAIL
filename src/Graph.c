@@ -3,7 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include <pthread.h>
-#include "Graph.h"
+#include "graph.h"
 #include "bitmap.h"
 #define DEBUG 1 
 #define MAX_THREADS 5 

@@ -1,4 +1,4 @@
-#include "Label.h"
+#include "label.h"
 #include <check.h>
 #include <stdlib.h>
 START_TEST (test_label_init)
