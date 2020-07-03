@@ -3,7 +3,7 @@
 CC=gcc
 IDIR=./include/
 SDIR=./src/
-CFLAGS=-pthread -Wall -g -O0 -std=c11
+CFLAGS=-pthread -Wall -g -O0
 
 main: $(SDIR)/*.c 
 	$(CC) $(SDIR)/*.c $(CFLAGS) -I $(IDIR) -o bin/main
