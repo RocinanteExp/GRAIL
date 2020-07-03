@@ -1,7 +1,7 @@
 #ifndef GRAPH_H_GUARD
 #define GRAPH_H_GUARD
 #include "bitmap.h"
-#include "Label.h"
+#include "label.h"
 #include <stdint.h>
 
 typedef struct node_s{

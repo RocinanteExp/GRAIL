@@ -37,24 +37,25 @@ void malloc_performance(){
     printf("DIFFERENCE x 20 %f\n", (double)(end - start) / CLOCKS_PER_SEC);
 }
 
-void start_thread(void* arg) {
+void* start_thread(void* arg) {
     char buffer[200000];
 
     for(int i = 0; i < 10; i++) { 
         fgets(buffer, 200000, fin); 
         printf("line %s\n", buffer);
     }
+
+    return NULL;
     
 }
 
-int main(int argc, char **argv){
+void test() {
 
     const int MAX_THREADS = 4;
-    
     fin = fopen("./v500000e1000.gra", "r");
     if(fin == NULL){
         fprintf(stdout, "ERROR opening file\n");
-        return 1;
+        return;
     }
 
     pthread_t thread_ids[MAX_THREADS];
@@ -68,9 +69,23 @@ int main(int argc, char **argv){
     }
 
     for(int i = 0; i < MAX_THREADS; i++) {
-        int err = pthread_join(thread_ids[i], NULL);
+        pthread_join(thread_ids[i], NULL);
     }
 
+}
+
+int main(int argc, char **argv) {
+
+    Graph* graph = graph_create("v500000e1000.gra", 5);
+    //graph_print(graph, true, -1); 
+    graph_print(graph, true, 203); 
+    graph_print(graph, true, 8888); 
+    graph_print(graph, true, 123456); 
+    graph_print(graph, true, 399999); 
+    graph_print(graph, true, 400000); 
+    graph_print(graph, true, 499999); 
+
     return 0;
+
 }
 

@@ -195,7 +195,7 @@ Graph* graph_create(char *filepath, int num_intervals) {
     }
 
     for(int i = 0; i < MAX_THREADS; i++) {
-        int err = pthread_join(thread_ids[i], NULL);
+        pthread_join(thread_ids[i], NULL);
     }
 
     pthread_spin_destroy(&lock);
@@ -218,7 +218,7 @@ Graph* graph_create(char *filepath, int num_intervals) {
         }
         if(next >= MAGIC_NUMBER){
             MAGIC_NUMBER *= 2;
-            realloc(p_graph->root_nodes, MAGIC_NUMBER);
+            p_graph->root_nodes = realloc(p_graph->root_nodes, MAGIC_NUMBER);
         }
     }
     p_graph->num_root_nodes = next;
@@ -245,37 +245,39 @@ static void *start_thread(void *thread_argument) {
 #if DEBUG
     fprintf(stdout, "args num_intervals %d tot_nodes %d iteration %d\n", num_intervals, tot_nodes, *p_cur_iteration);
 #endif
-        while(1){
-            pthread_spin_lock(p_lock);
-            if(*p_cur_iteration < tot_nodes){
-                fgets(lines, BUFF_SIZE, fin);
-                uint32_t node_id = (*p_cur_iteration)++;
-                pthread_spin_unlock(p_lock);
+    while(1){
+        pthread_spin_lock(p_lock);
+        if(*p_cur_iteration < tot_nodes){
+            fgets(lines, BUFF_SIZE, fin);
+            uint32_t node_id = (*p_cur_iteration)++;
+            pthread_spin_unlock(p_lock);
 
-                Node* curr_node = node_create(num_intervals, node_id);
-                if(curr_node == NULL){
-                    fprintf(stderr, "ERROR: failed node_create at iteration %d of graph_create\n", node_id);
-                    for(int j = 0; j < node_id; j++){
-                        free(p_graph->nodes[j]);
-                    }
-                    free(p_graph->nodes);
-                    free(p_graph);
-                    return NULL;
-                }   
+            Node* curr_node = node_create(num_intervals, node_id);
+            if(curr_node == NULL){
+                fprintf(stderr, "ERROR: failed node_create at iteration %d of graph_create\n", node_id);
+                for(int j = 0; j < node_id; j++){
+                    free(p_graph->nodes[j]);
+                }
+                free(p_graph->nodes);
+                free(p_graph);
+                return NULL;
+            }   
 
-                node_set_children(curr_node, lines);
-                p_graph->nodes[node_id] = curr_node;
-                
-                // set the nodes that have incomings edges
-                for(int i = 0; i < curr_node->num_children; i++)
-                    bitmap_set_bit(non_root_nodes, curr_node->children[i]);
+            node_set_children(curr_node, lines);
+            p_graph->nodes[node_id] = curr_node;
 
-            }else{
-                pthread_spin_unlock(p_lock);
-                break;
-            }
+            // set the nodes that have incomings edges
+            for(int i = 0; i < curr_node->num_children; i++)
+                bitmap_set_bit(non_root_nodes, curr_node->children[i]);
 
+        }else{
+            pthread_spin_unlock(p_lock);
+            break;
         }
+
+    }
+
+    return (void*) 1;
 
 }
 
@@ -302,7 +304,7 @@ static void *multi_line_read(void *thread_argument) {
     pthread_spinlock_t *p_lock = arg->lock;
 
 #if DEBUG
-    fprintf(stdout, "thread_id %d args: num_intervals %d tot_nodes %d iteration %d\n", pthread_self(), num_intervals, tot_nodes, *p_cur_iteration);
+    fprintf(stdout, "thread_id %ld args: num_intervals %d tot_nodes %d iteration %d\n", pthread_self(), num_intervals, tot_nodes, *p_cur_iteration);
 #endif
         while(true){
             if(*p_cur_iteration < tot_nodes) {
@@ -350,6 +352,9 @@ static void *multi_line_read(void *thread_argument) {
             }
 
         }
+
+        return (void*) 1;
+
 }
 
 void graph_destroy(Graph *graph){

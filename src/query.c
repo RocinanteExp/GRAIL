@@ -6,6 +6,7 @@
 #define MAX_LENGTH_QUERY 8192 
 #define DEBUG 1 
 
+
 /* fill the "queries" with the query read from the file at filepath
  * To access the ith query stored in "queries" use:
  *      queries[i*2] is the source node 
@@ -14,7 +15,7 @@
  */
 static uint32_t query_read_from_file(char *filepath, int32_t *queries);
 // for now this function is not currently used 
-static bool dfs(int32_t source_id, int32_t dest_id, Graph* graph);
+//static bool dfs(int32_t source_id, int32_t dest_id, Graph* graph);
 // used for tracking the visited nodes in the dfs. It is used in "query_is_reachable" 
 static Bitmap* visited_nodes = NULL;
 
@@ -55,7 +56,7 @@ static uint32_t query_read_from_file(char *filepath, int32_t *queries){
    while(fgets(buff, MAX_LENGTH_BUFFER, fp)){
        if(sscanf(buff, "%d %d", &queries[next * 2], &queries[next * 2 + 1]) == 2){  
 #if DEBUG
-           fprintf(stdout, "next: %I64u -> %d %d\n", next + 1, queries[next * 2], queries[next * 2 + 1]);
+           fprintf(stdout, "next: %I64lu -> %d %d\n", next + 1, queries[next * 2], queries[next * 2 + 1]);
 #endif
            next++;
        }
@@ -127,6 +128,7 @@ bool query_is_reachable(int32_t source_id, int32_t dest_id, Graph* graph){
 
 }
 
+/*
 // for now this function is not used
 static bool dfs(int32_t source_id, int32_t dest_id, Graph* graph){
 
@@ -144,7 +146,9 @@ static bool dfs(int32_t source_id, int32_t dest_id, Graph* graph){
     return false;
 
 }
+*/
 
+/*
 int main(int argc, char **argv){
     
     Graph* graph = graph_create("./test/input/grafo20.gra", 1);
@@ -160,3 +164,4 @@ int main(int argc, char **argv){
     //graph_print(graph, true, -1); 
     //query_init("queries.que", graph); 
 }
+*/

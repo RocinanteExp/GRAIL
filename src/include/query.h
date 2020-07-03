@@ -1,7 +1,7 @@
 #ifndef QUERY_H
 #define QUERY_H
 #include <stdbool.h>
-#include "Graph.h"
+#include "graph.h"
 
 /* check is if the node with id "source_id" can reach the node with id "dest_id"
  */
