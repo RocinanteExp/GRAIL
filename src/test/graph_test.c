@@ -4,13 +4,13 @@
 #include <stdio.h>
 START_TEST (test_graph_create)
 {
-    Graph* graph= graph_create("grafo.gra",2);
-    ck_assert(graph->num_nodes==10);
+    Graph* graph= graph_create("grafo20.gra",2);
+    ck_assert(graph->num_nodes==20);
     ck_assert(graph->nodes[0]->id==0);
     ck_assert(graph->nodes[0]->num_children==1);
-    ck_assert(graph->num_root_nodes==6);
+    ck_assert(graph->num_root_nodes==9);
     ck_assert(graph->root_nodes[0]==0);
-    ck_assert(graph->root_nodes[2]==3);
+    ck_assert(graph->root_nodes[2]==2);
 }
 END_TEST
 Suite* graph_suite(void)
@@ -29,7 +29,7 @@ int main(void)
     int n_fail;
     Suite* s;
     SRunner *sr;
-    Graph *graph = graph_create("grafo.gra", 2);
+    Graph *graph = graph_create("./input/grafo.gra", 2);
     graph_print(graph, false, -1);
     s=graph_suite();
     sr=srunner_create(s);

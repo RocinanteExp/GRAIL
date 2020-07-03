@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "labeling.h"
+#include "labelling.h"
 #include "graph.h"
 #include "bitmap.h"
 #include <stdint.h>
