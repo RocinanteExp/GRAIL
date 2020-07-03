@@ -1,10 +1,16 @@
+# -*- Makefile -*-
+
 CC=gcc
-CFLAGS=-pthread -I
-main : src/main.c src/label.c src/bitmap.c src/graph.c src/labelling.c src/query.c
-	$(CC) src/main.c src/label.c src/bitmap.c src/graph.c src/labelling.c src/query.c -pthread -I "src/include" -Wall -g -o src/main
-test:  label.c bitmap.c graph.c labelling.c query.c
-	gcc -std=c11  -Wall labeling_and_query_test.c -o test label.c bitmap.c graph.c labelling.c query.c -lcheck -lm -lpthread -lrt -lsubunit -I "../include"
-clear: 
-	rm -f test
-	rm -f main
+IDIR=./include/
+SDIR=./src/
+CFLAGS=-pthread -Wall -g -O0 -std=c11
+
+main: $(SDIR)/*.c 
+	$(CC) $(SDIR)/*.c $(CFLAGS) -I $(IDIR) -o bin/main
+test: src/label.c src/bitmap.c src/graph.c src/labelling.c src/query.c test/labeling_and_query_test.c
+	gcc test/labeling_and_query_test.c src/label.c src/bitmap.c src/graph.c src/labelling.c src/query.c -lcheck -lm -lrt -lsubunit -I $(IDIR) -o bin/test
+clean: 
+	rm -f bin/main
+cleanWin: 
+	rm bin\main.exe
 

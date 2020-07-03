@@ -76,7 +76,7 @@ void test() {
 
 int main(int argc, char **argv) {
 
-    Graph* graph = graph_create("./test/input/grafo20.gra", 5);
+    Graph* graph = graph_create("../test/input/grafo20.gra", 5);
     graph_print(graph, true, -1); 
     //Graph* graph = graph_create("./test/input/v500000e1000.gra", 5);
     //graph_print(graph, true, 203); 
