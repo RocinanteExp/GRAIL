@@ -10,6 +10,8 @@
 
 static void *start_thread(void *thread_argument);
 static void *multi_line_read(void *thread_argument);
+//Set the childrens of a node using the string red from the file
+static void node_set_children(Node* node, char* str);
 
 static Bitmap* non_root_nodes;
 struct thread_arg {
@@ -61,8 +63,8 @@ Node* node_create_multiple(uint32_t num_intervals, uint32_t* node_ids, uint32_t 
 
         //curr_node->intervals = malloc(num_intervals * sizeof(Label));
         for(int j = 0; j < num_intervals; j++) {
-            curr_node->intervals[j].left = 2;
-            curr_node->intervals[j].right = 3;
+            curr_node->intervals[j].left = UINT32_MAX;
+            curr_node->intervals[j].right = UINT32_MAX;
         }
 
         curr_node->id = node_ids[i];
@@ -88,49 +90,46 @@ void node_destroy(Node* node)
 
 }
 
-void node_set_children(Node* node, char* str)
+static void node_set_children(Node* node, char* str)
 {
-    uint32_t n=0;
-    uint32_t i=0;
+    uint32_t n = 0;
+    uint32_t i = 0;
     uint32_t str_length = strlen(str);
-    char* s=malloc(sizeof(char)*(str_length+1));
+    char s[strlen(str) + 1]; 
     //char* context;
-    char* tok;
     if(strcpy(s, str) == NULL)
     {
-
         fprintf(stderr, "ERROR: strcpy set_children\n");
         return; 
     }
-#if DEBUG
-    //printf("lunghezza stringa parametro 'str' %llu\n", str_length);
-    //printf("[%s] [%s]\n", s, str);
-    //printf("FINE PRIMA STAMPA\n");
-#endif
-    tok = strtok(s, ": #\n\r");
+
+    // finding how many children does a node have
+    char *tok = strtok(s, ": #\n\r");
     while((tok = strtok(NULL, ": #\n\r")) != NULL)
     {
         n++;
     } 
-    node->children = (uint32_t*) calloc(n, sizeof(uint32_t));
+
+    node->children = malloc(n*sizeof(uint32_t));
+    if(node->children == NULL) {
+        fprintf(stderr, "failed malloc on node_set_children\n");
+        exit(1);
+    }
+
     if(strcpy(s, str) == NULL)
     {
         fprintf(stderr, "ERROR: strcpy set_children\n");
         return; 
     }
+
     tok = strtok(s, ": #\n\r");
     while((tok = strtok(NULL, ": #\n\r")) != NULL && i < n)
     {
         node->children[i] = (unsigned int) atoi(tok);
         i++;
     }
-    node->num_children = n;
 
-#if DEBUG
-    //node_print(node, false);
-    //printf("\n");
-    //printf("--------------------------------\n");
-#endif
+    node->num_children = n;
 
 }
 
@@ -247,6 +246,7 @@ static void *start_thread(void *thread_argument) {
 #endif
     while(1){
         pthread_spin_lock(p_lock);
+
         if(*p_cur_iteration < tot_nodes){
             fgets(lines, BUFF_SIZE, fin);
             uint32_t node_id = (*p_cur_iteration)++;
@@ -382,7 +382,7 @@ void graph_print(Graph *graph, bool verbose, uint32_t index_node){
             node_print(graph->nodes[i++], verbose);
         }
 
-        fprintf(stdout, "ROOT NODES\n");
+        fprintf(stdout, "%d ROOT NODES\n", graph->num_root_nodes);
         for(int i = 0; i < graph->num_root_nodes; i++){
             fprintf(stdout, "%d ", graph->root_nodes[i]);
         }
@@ -401,17 +401,19 @@ void graph_print(Graph *graph, bool verbose, uint32_t index_node){
 void node_print(Node *node, bool verbose){
 
     fprintf(stdout, "%d: ", node->id);
-    for(int i = 0; i < node->num_children; i++){
+    for(int i = 0; i < node->num_children; i++) {
         printf("%d ", node->children[i]);
     }
     
     fprintf(stdout, "# ");
 
-    if(verbose){
+    if(verbose) {
         fprintf(stdout, "\nLABELS: ");
-        for(int i = 0; i < node->num_intervals; i++){
-            printf("[%d %d]", node->intervals[i].left, node->intervals[i].right);
+        for(int i = 0; i < node->num_intervals; i++) {
+            fprintf(stdout, "[%d %d]", node->intervals[i].left, node->intervals[i].right);
         }
+
+        fprintf(stdout, "\ntot children %d", node->num_children);
     }
 
     fprintf(stdout, "\n");
@@ -428,9 +430,9 @@ void labels_print(Graph *graph)
         int j=0;
         printf("#%d :",node->id);
         for(j=0;j<graph->num_intervals;j++)
-            {
-                printf(" (%d,%d)",node->intervals[j].left,node->intervals[j].right);
-            }
-            printf(" #\n");
+        {
+            printf(" (%d,%d)",node->intervals[j].left,node->intervals[j].right);
+        }
+        printf(" #\n");
     }
 }
