@@ -1,3 +1,4 @@
 bin/*
-test/input/*
+test/input/v500000*
+src/*.exe
 

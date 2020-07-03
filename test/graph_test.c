@@ -4,7 +4,7 @@
 #include <stdio.h>
 START_TEST (test_graph_create)
 {
-    Graph* graph= graph_create("grafo20.gra",2);
+    Graph* graph= graph_create("test/input/grafo20.gra",2);
     ck_assert(graph->num_nodes==20);
     ck_assert(graph->nodes[0]->id==0);
     ck_assert(graph->nodes[0]->num_children==1);
@@ -29,7 +29,7 @@ int main(void)
     int n_fail;
     Suite* s;
     SRunner *sr;
-    Graph *graph = graph_create("./input/grafo.gra", 2);
+    Graph *graph = graph_create("test/input/grafo20.gra", 2);
     graph_print(graph, false, -1);
     s=graph_suite();
     sr=srunner_create(s);

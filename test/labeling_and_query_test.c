@@ -6,7 +6,7 @@
 
 START_TEST (graph_labelling_test)
 {
-    Graph *graph=graph_create("./input/grafo20.gra",2);
+    Graph *graph=graph_create("test/input/grafo20.gra",2);
     graph_randomize_labelling_sequential(graph,graph->num_intervals);
     labels_print(graph);
     
@@ -42,7 +42,7 @@ int main(void)
    int n_fail;
    Suite* s;
    SRunner *sr;
-   Graph *graph = graph_create("grafo.gra", 2);
+   Graph *graph = graph_create("test/input/grafo20.gra", 2);
    graph_print(graph, false, -1);
    s=labelling_suite();
    sr=srunner_create(s);
