@@ -222,7 +222,7 @@ Graph* graph_create(char *filepath, int num_intervals) {
         }*/
     }
     p_graph->num_root_nodes = next;
-    p_graph->root_nodes = realloc(p_graph->root_nodes,next+2);   
+    p_graph->root_nodes = realloc(p_graph->root_nodes,next*sizeof(uint32_t));   
     bitmap_destroy(non_root_nodes);
     fclose(fin);
     return p_graph;
