@@ -210,19 +210,19 @@ Graph* graph_create(char *filepath, int num_intervals) {
 
     //finding the root nodes of the graph
     uint32_t next = 0;
-    uint16_t MAGIC_NUMBER = 512;
-    p_graph->root_nodes = malloc(MAGIC_NUMBER * sizeof(uint32_t));
+    uint32_t MAGIC_NUMBER = 512;
+    p_graph->root_nodes = malloc(num_nodes * sizeof(uint32_t));
     for(int i = 0; i < p_graph->num_nodes; i++){
         if(!bitmap_test_bit(non_root_nodes, i)){
             p_graph->root_nodes[next++] = i;
         }
-        if(next >= MAGIC_NUMBER){
+        /*if(next >= MAGIC_NUMBER){
             MAGIC_NUMBER *= 2;
             p_graph->root_nodes = realloc(p_graph->root_nodes, MAGIC_NUMBER);
-        }
+        }*/
     }
     p_graph->num_root_nodes = next;
-
+    p_graph->root_nodes = realloc(p_graph->root_nodes,next+2);   
     bitmap_destroy(non_root_nodes);
     fclose(fin);
     return p_graph;

@@ -75,10 +75,12 @@ void test() {
 }
 
 int main(int argc, char **argv) {
-
-    Graph* graph = graph_create("../test/input/grafo20.gra", 5);
+    clock_t start = clock();
+    Graph* graph = graph_create("../test/input/large/graph2.gra", 5);
     graph_randomize_labelling(graph);
-    graph_print(graph, true, -1); 
+    clock_t end = clock();
+    printf("DIFFERENCE x 20 %f\n", (double)(end - start) / CLOCKS_PER_SEC);
+    //graph_print(graph, true, -1); 
     //Graph* graph = graph_create("./test/input/v500000e1000.gra", 5);
     //graph_print(graph, true, 203); 
     //graph_print(graph, true, 8888); 
