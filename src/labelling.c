@@ -27,7 +27,7 @@ static uint32_t get_ramdom_order_roots(Graph *graph, Bitmap *roots_map)
 {
 
 #if !DEBUG
-    uint32_t j = rand() % graph->num_root_nodes;
+    uint32_t j = rand_r(pthread_self()) % graph->num_root_nodes;
 #else
     uint32_t j = 0;
 #endif
@@ -42,7 +42,7 @@ static uint32_t get_ramdom_order_roots(Graph *graph, Bitmap *roots_map)
 static uint32_t get_ramdom_order_children(Node *node, Bitmap * child_map) 
 {
 #if !DEBUG
-    uint32_t j = rand() % node->num_children;
+    uint32_t j = rand_r(pthread_self()) % node->num_children;
 #else
     uint32_t j = 0;
 #endif
@@ -216,6 +216,7 @@ static void  graph_random_visit(Graph *graph,Bitmap* visited_nodes,uint32_t node
     {
         num_childrens++;
         j = get_ramdom_order_children(node, child_map);
+        bitmap_set_bit(child_map, j);
         graph_random_visit(graph,visited_nodes,node->children[j],idx,rank);
     }
     

@@ -78,12 +78,12 @@ int main(int argc, char **argv) {
     Graph* graph = graph_create("../test/input/large/graph2.gra", 5);
     clock_t start = clock();
     graph_randomize_labelling(graph);
-    clock_t end = clock();
+   clock_t end = clock();
     printf("DIFFERENCE Parallel: %f\n", (double)(end - start) / CLOCKS_PER_SEC);
-    start = clock();
+    /*clock_t start_seq = clock();
     graph_randomize_labelling_sequential(graph,5);
-    end = clock();
-    printf("DIFFERENCE Sequential: %f\n", (double)(end - start) / CLOCKS_PER_SEC);
+    clock_t end_seq = clock();
+    printf("DIFFERENCE Sequential: %f\n", (double)(end_seq - start_seq) / CLOCKS_PER_SEC);*/
     //graph_print(graph, true, -1); 
     //Graph* graph = graph_create("./test/input/v500000e1000.gra", 5);
     //graph_print(graph, true, 203); 
