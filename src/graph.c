@@ -61,8 +61,8 @@ Node* node_create_multiple(uint32_t num_intervals, uint32_t* node_ids, uint32_t 
 
         //curr_node->intervals = malloc(num_intervals * sizeof(Label));
         for(int j = 0; j < num_intervals; j++) {
-            curr_node->intervals[j].left = 2;
-            curr_node->intervals[j].right = 3;
+            curr_node->intervals[j].left = UINT32_MAX;
+            curr_node->intervals[j].right = UINT32_MAX;
         }
 
         curr_node->id = node_ids[i];

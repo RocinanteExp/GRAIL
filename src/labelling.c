@@ -6,7 +6,7 @@
 #include "graph.h"
 #include "bitmap.h"
 #include <stdint.h>
-#define DEBUG 1 
+#define DEBUG 0 
 // MACRO for MIN
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
@@ -20,6 +20,8 @@ struct thread_argument
     uint32_t rank;
     pthread_spinlock_t* lock;
 };
+static void *start_thread(void *thread_argument);
+static void  graph_random_visit(Graph *graph,Bitmap* visited_nodes,uint32_t node_id, uint32_t idx, uint32_t* rank);
 // function to get a random number for roots
 static uint32_t get_ramdom_order_roots(Graph *graph, Bitmap *roots_map) 
 {
@@ -145,7 +147,7 @@ void graph_randomize_labelling(Graph *graph)
         // inizialize thread arguments
         args[idx].graph=graph; args[idx].idx=idx;
         args[idx].rank=1; args[idx].lock=&lock;
-        err=pthread_create(&tids[idx],NULL,start_thread,(void*)&args[idx]);
+        err=pthread_create(&tids[idx],NULL,setting_intervals,(void*)&args[idx]);
         if(err!=0)
         {
             fprintf(stderr, "ERROR: pthread_create %d", idx);
@@ -161,8 +163,9 @@ void graph_randomize_labelling(Graph *graph)
             exit(-2);
         }
     }
+    pthread_spin_destroy(&lock);
 }
-static void *start_thread(void *thread_argument)
+static void *setting_intervals(void *thread_argument)
 {
     struct thread_argument *arg=(struct thread_argument *) thread_argument;
     Graph* graph= arg->graph;
