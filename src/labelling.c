@@ -20,7 +20,7 @@ struct thread_argument
     uint32_t rank;
     pthread_spinlock_t* lock;
 };
-static void *start_thread(void *thread_argument);
+static void *setting_intervals(void *thread_argument);
 static void  graph_random_visit(Graph *graph,Bitmap* visited_nodes,uint32_t node_id, uint32_t idx, uint32_t* rank);
 // function to get a random number for roots
 static uint32_t get_ramdom_order_roots(Graph *graph, Bitmap *roots_map) 
