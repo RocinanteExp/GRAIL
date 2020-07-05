@@ -71,6 +71,7 @@ static void  graph_random_visit_sequential(Graph *graph,Bitmap* visited_nodes,ui
     {
         num_childrens++;
         j = get_ramdom_order_children(node, child_map);
+        bitmap_set_bit(child_map, j);
         graph_random_visit_sequential(graph,visited_nodes,node->children[j],idx);
     }
     
