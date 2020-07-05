@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include "label.h"
 
-Label label_init(uint64_t l,uint64_t r)
+Label label_init(uint32_t l,uint32_t r)
 {
     Label x;
     x.left=l;
