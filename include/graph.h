@@ -40,5 +40,6 @@ void graph_print(Graph *graph, bool verbose, uint32_t index_node);
 /* Print a node. In the verbose version, it will print, besides the children ids, the labels 
  */
 void node_print(Node *node, bool verbose); 
+int graph_print_to_file(char *filename, Graph *graph); 
 void labels_print(Graph *graph);
 #endif
