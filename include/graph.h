@@ -29,8 +29,7 @@ typedef struct graph_s{
 Node* node_create(uint32_t num_intervals, uint32_t node_id);
 //Free memory and destroy node
 void node_destroy(Node* node);
-//Set the childrens of a node using the string red from the file
-void node_set_children(Node* node, char* str);
+
 
 Graph* graph_create(char *filepath, int num_intervals);
 void graph_destroy(Graph *graph);

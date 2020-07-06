@@ -92,9 +92,11 @@ void node_destroy(Node* node)
 
 static void node_set_children(Node* node, char* str)
 {
-    uint32_t n = 0;
-    uint32_t i = 0;
-    char s[strlen(str) + 1]; 
+    uint32_t n=0;
+    uint32_t i=0;
+    uint32_t str_length = strlen(str);
+    char* s=malloc(sizeof(char)*(str_length+1));
+    char* tok;
     //char* context;
     if(strcpy(s, str) == NULL)
     {
@@ -103,7 +105,7 @@ static void node_set_children(Node* node, char* str)
     }
 
     // finding how many children does a node have
-    char *tok = strtok(s, ": #\n\r");
+    tok = strtok(s, ": #\n\r");
     while((tok = strtok(NULL, ": #\n\r")) != NULL)
     {
         n++;
@@ -216,7 +218,7 @@ Graph* graph_create(char *filepath, int num_intervals) {
         }
         if(next >= MAGIC_NUMBER) {
             MAGIC_NUMBER *= 2;
-            fprintf(stdout, "REALLOCCCCCCCCCCCCCCCCC\n");
+            //fprintf(stdout, "REALLOCCCCCCCCCCCCCCCCC\n");
             p_graph->root_nodes = realloc(p_graph->root_nodes, MAGIC_NUMBER * sizeof(uint32_t));
         }
     }
@@ -263,8 +265,9 @@ static void *start_thread(void *thread_argument) {
                 free(p_graph);
                 return NULL;
             }   
-
+            pthread_spin_lock(p_lock);
             node_set_children(curr_node, lines);
+            pthread_spin_unlock(p_lock);
             p_graph->nodes[node_id] = curr_node;
 
             // set the nodes that have incomings edges
@@ -341,7 +344,9 @@ static void *multi_line_read(void *thread_argument) {
 
                for(int i = 0; i < max_valid_nodes; i++) { 
                    Node* curr_node = base_node + i;
+                   pthread_spin_lock(p_lock);
                    node_set_children(curr_node, lines[i]);
+                   pthread_spin_unlock(p_lock);
                    p_graph->nodes[node_ids[i]] = curr_node; 
                    for(int j = 0; j < curr_node->num_children; j++) {
                        bitmap_set_bit(non_root_nodes, curr_node->children[j]);

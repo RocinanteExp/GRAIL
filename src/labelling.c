@@ -6,6 +6,7 @@
 #include "graph.h"
 #include "bitmap.h"
 #include <stdint.h>
+#define MAX_THREADS 4
 #define DEBUG 0 
 // MACRO for MIN
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
@@ -18,10 +19,20 @@ struct thread_argument
     Graph* graph;
     uint32_t idx;
     uint32_t rank;
+};
+struct thread_argument_roots 
+{
+    Graph* graph;
+    uint32_t idx;
+    uint32_t* rank;
+    uint32_t root_id;
     pthread_spinlock_t* lock;
+    Bitmap* visited_nodes;
 };
 static void *setting_intervals(void *thread_argument);
 static void  graph_random_visit(Graph *graph,Bitmap* visited_nodes,uint32_t node_id, uint32_t idx, uint32_t* rank);
+static void *setting_intervals_roots(void *thread_argument);
+static void  graph_random_visit_with_lock(Graph *graph,Bitmap* visited_nodes,uint32_t node_id, uint32_t idx, uint32_t* rank, pthread_spinlock_t* lock);
 // function to get a random number for roots
 static uint32_t get_ramdom_order_roots(Graph *graph, Bitmap *roots_map) 
 {
@@ -137,18 +148,13 @@ void graph_randomize_labelling(Graph *graph)
     uint32_t idx=0;
     pthread_t *tids=malloc(graph->num_intervals*sizeof(pthread_t));
     struct thread_argument* args= malloc(graph->num_intervals*sizeof(struct thread_argument));
-    pthread_spinlock_t lock;
-    int err = pthread_spin_init(&lock, 0);
-    if(err != 0){
-        fprintf(stderr, "ERROR: pthread_spin_init");
-        exit(-1);
-    };
+    
     for(idx=0;idx<graph->num_intervals;idx++)
     {
         // inizialize thread arguments
         args[idx].graph=graph; args[idx].idx=idx;
-        args[idx].rank=1; args[idx].lock=&lock;
-        err=pthread_create(&tids[idx],NULL,setting_intervals,(void*)&args[idx]);
+        args[idx].rank=1; 
+       int err=pthread_create(&tids[idx],NULL,setting_intervals,(void*)&args[idx]);
         if(err!=0)
         {
             fprintf(stderr, "ERROR: pthread_create %d", idx);
@@ -157,21 +163,20 @@ void graph_randomize_labelling(Graph *graph)
     }
     for(idx=0;idx<graph->num_intervals;idx++)
     {
-        err= pthread_join(tids[idx],NULL);
+       int err= pthread_join(tids[idx],NULL);
         if(err!=0)
         {
             fprintf(stderr, "ERROR: pthread_join %d", idx);
             exit(-2);
         }
     }
-    pthread_spin_destroy(&lock);
 }
+// thread fuction fo setting intervals of the labels of the given index
 static void *setting_intervals(void *thread_argument)
 {
     struct thread_argument *arg=(struct thread_argument *) thread_argument;
     Graph* graph= arg->graph;
     uint32_t idx=arg->idx;
-    pthread_spinlock_t *lock= arg->lock;
     uint32_t rank = arg->rank;
     uint32_t num_roots=0;
     uint32_t i=0;
@@ -179,12 +184,12 @@ static void *setting_intervals(void *thread_argument)
     Bitmap* visited_nodes = bitmap_create(graph->num_nodes);
     if(roots_map == NULL)
     {
-        fprintf(stderr, "ERROR IN ALLOCATING BITMAP IN: graph_randomize_labelling\n");
+        fprintf(stderr, "ERROR IN ALLOCATING BITMAP IN: setting_intervals\n");
         exit(-1);
     }
     if(visited_nodes == NULL)
     {
-        fprintf(stderr, "ERROR IN ALLOCATING BITMAP IN: graph_randomize_labelling\n");
+        fprintf(stderr, "ERROR IN ALLOCATING BITMAP IN: setting_intervals\n");
         exit(-1);
     }
     while(num_roots<graph->num_root_nodes)
@@ -198,7 +203,7 @@ static void *setting_intervals(void *thread_argument)
     bitmap_destroy(visited_nodes);
     pthread_exit((void*) 0);
 }
-
+//sequential random visit
 static void  graph_random_visit(Graph *graph,Bitmap* visited_nodes,uint32_t node_id, uint32_t idx, uint32_t* rank)
 {
     int j = 0;
