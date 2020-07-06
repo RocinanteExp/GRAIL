@@ -5,6 +5,7 @@
 #include "graph.h"
 #include "bitmap.h"
 #include <stdint.h>
+#include <time.h>
 #define DEBUG 1 
 // MACRO for MIN
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
@@ -64,8 +65,9 @@ static void graph_random_visit_sequential(Graph *graph, Bitmap *visited_nodes, u
     uint32_t num_childrens = 0;
     while(num_childrens < node->num_children)
     {
+        uint32_t j = num_childrens;
         num_childrens++;
-        uint32_t j = get_random_order_children(node, child_map);
+        //uint32_t j = get_random_order_children(node, child_map);
         bitmap_set_bit(child_map, j);
         graph_random_visit_sequential(graph,visited_nodes,node->children[j],idx);
     }
@@ -108,28 +110,36 @@ void graph_randomize_labelling_sequential(Graph *graph, uint32_t num_intevals)
         exit(-1);
     }
     
+#if DEBUG
+    clock_t start = clock();
+#endif
     // idx == current traversal / interval, e.g. d = 5, idx goes from 0 to 4
     for(uint32_t idx = 0; idx < num_intevals; idx++)
     {
         // reset values at the beginning of every traversal
         global_rank = 1;
-        uint32_t num_roots = 0;
+        uint32_t num_visited_roots = 0;
         bitmap_clear_all(roots_map);
         bitmap_clear_all(nodes_map);
 
         // visit all roots
-        while(num_roots < graph->num_root_nodes)
+        while(num_visited_roots < graph->num_root_nodes)
         {
-            uint32_t i = get_random_order_roots(graph, roots_map);
-            bitmap_set_bit(roots_map, i);
-            num_roots++;
+            //uint32_t i = get_random_order_roots(graph, roots_map);
+            //bitmap_set_bit(roots_map, i);
+            bitmap_set_bit(roots_map, num_visited_roots);
 #if DEBUG
-            fprintf(stdout, "visiting root node %d\n", graph->root_nodes[i]);
+            fprintf(stdout, "Generating label -> root node %d\n", graph->root_nodes[num_visited_roots]);
+            //fprintf(stdout, "visiting root node %d\n", graph->root_nodes[i]);
 #endif
-            graph_random_visit_sequential(graph, nodes_map, graph->root_nodes[i], idx);
+            graph_random_visit_sequential(graph, nodes_map, graph->root_nodes[num_visited_roots], idx);
+            num_visited_roots++;
         }
     }
-
+#if DEBUG
+    clock_t end = clock();
+    printf("DIFFERENCE generation label took %fs\n", (double)(end - start) / CLOCKS_PER_SEC);
+#endif
     bitmap_destroy(roots_map);
     bitmap_destroy(nodes_map);
 }
