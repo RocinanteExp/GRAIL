@@ -396,7 +396,6 @@ void graph_print(Graph *graph, bool verbose, uint32_t index_node){
         node_print(graph->nodes[index_node], verbose); 
     }
 
-
 }
 
 //TODO implement a "verbose" version of printing a node
@@ -421,6 +420,36 @@ void node_print(Node *node, bool verbose){
     fprintf(stdout, "\n");
 
 }
+
+static void node_print_out(Node *node, FILE *fout){
+
+    fprintf(fout, "%d: ", node->id);
+    for(int i = 0; i < node->num_children; i++) {
+        fprintf(fout, "%d ", node->children[i]);
+    }
+    
+    fprintf(fout, "#\n");
+}
+
+static void graph_print_out(Graph *graph, FILE *fout) { 
+
+        fprintf(fout, "%u\n", graph->num_nodes);
+        int i = 0;
+        while(i < graph->num_nodes){
+            node_print_out(graph->nodes[i++], fout);
+        }
+}
+
+int graph_print_to_file(char *filename, Graph *graph) {
+    FILE *fout = fopen(filename, "w");
+    if(fout == NULL) {
+        fprintf(stderr, "fopen failed at graph_print_to_file %s", filename);
+        exit(2);
+    }
+
+    graph_print_out(graph, fout);
+
+};
 
 void labels_print(Graph *graph)
 {
