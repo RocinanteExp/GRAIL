@@ -11,7 +11,7 @@
 static void *start_thread(void *thread_argument);
 static void *multi_line_read(void *thread_argument);
 //Set the childrens of a node using the string red from the file
-static void node_set_children(Node* node, char* str);
+static void node_set_children(Node *node, char* str);
 
 static Bitmap* non_root_nodes = NULL;
 static struct thread_arg {
@@ -421,49 +421,138 @@ void node_print(Node *node, bool verbose){
 
 }
 
-static void node_print_out(Node *node, FILE *fout){
+static int node_print_out(Node *node, FILE *fout){
 
     fprintf(fout, "%d: ", node->id);
     for(int i = 0; i < node->num_children; i++) {
-        fprintf(fout, "%d ", node->children[i]);
+        int err = fprintf(fout, "%d ", node->children[i]);
+        if(err < 0) {
+            return err;
+        }
     }
     
-    fprintf(fout, "#\n");
+    int err = fprintf(fout, "#\n");
+    if(err < 0) {
+        return err;
+    }
+
+    return 1;
 }
 
-static void graph_print_out(Graph *graph, FILE *fout) { 
-
-        fprintf(fout, "%u\n", graph->num_nodes);
-        int i = 0;
-        while(i < graph->num_nodes){
-            node_print_out(graph->nodes[i++], fout);
-        }
-}
-
-int graph_print_to_file(char *filename, Graph *graph) {
+bool graph_print_to_file(char *filename, Graph *graph) {
     FILE *fout = fopen(filename, "w");
     if(fout == NULL) {
         fprintf(stderr, "fopen failed at graph_print_to_file %s", filename);
-        exit(2);
+        return false;
     }
 
-    graph_print_out(graph, fout);
+    fprintf(fout, "%u\n", graph->num_nodes);
+    int i = 0;
+    while(i < graph->num_nodes) {
+        int err = node_print_out(graph->nodes[i], fout);
+        if(err < 0) {
+            fprintf(stderr, "failed node_print_out at graph_print_to_file: i %d\n", i);  
+            return false;
+        }
+        i++;
+    }
+
+    return true;
+};
+
+
+bool label_print_to_file(char *filename, Graph *graph) {
+    FILE *fout = fopen(filename, "w");
+    if(fout == NULL) {
+        fprintf(stderr, "fopen failed at label_print_to_file %s", filename);
+        false;
+    }
+
+    const uint32_t tot_nodes = graph->num_nodes;
+    const uint32_t tot_intervals = graph->num_intervals;
+    for(uint32_t i = 0; i < tot_nodes; i++) {
+        Node* node = graph->nodes[i];
+
+        int err = fprintf(fout, "%u: ", node->id);
+        if(err < 0) {
+            fprintf(stderr, "failed label_print_out at graph_print_to_file: #%u\n", i);  
+            return false;
+        }
+
+        for(uint32_t j = 0; j < tot_intervals; j++) {
+            err = fprintf(fout, "[%u, %u] ", node->intervals[j].left, node->intervals[j].right);
+            if(err < 0) {
+                fprintf(stderr, "failed label_print_out at graph_print_to_file: [...] with j %u\n", j);  
+                return false;
+            }
+        }
+
+        err = fprintf(fout, "\n");
+        if(err < 0) {
+            fprintf(stderr, "failed label_print_out at graph_print_to_file: \\n\n");  
+            return false;
+        }
+    }
+
+    return true;
 
 };
 
 void labels_print(Graph *graph)
 {
-    int i=0;
-    printf("PRINT GRAPH LABELS\n");
-    for(i=0;i<graph->num_nodes;i++)
+    printf("PRINTING GRAPH LABELS\n");
+    for(int i = 0; i < 1000; i++)
     {
         Node* node = graph->nodes[i];
-        int j=0;
-        printf("#%d :",node->id);
-        for(j=0;j<graph->num_intervals;j++)
+        printf("#%u : ",node->id);
+        for(int j = 0; j<graph->num_intervals; j++)
         {
-            printf(" (%d,%d)",node->intervals[j].left,node->intervals[j].right);
+            printf("(%u, %u) ",node->intervals[j].left,node->intervals[j].right);
         }
-        printf(" #\n");
+        printf("\n");
+    }
+
+    for(int i = 0; i < 1000; i++)
+    {
+        Node* node = graph->nodes[i + 100000];
+        printf("#%u : ",node->id);
+        for(int j = 0; j<graph->num_intervals; j++)
+        {
+            printf("(%u, %u) ",node->intervals[j].left,node->intervals[j].right);
+        }
+        printf("\n");
+    }
+
+    for(int i = 0; i < 1000; i++)
+    {
+        Node* node = graph->nodes[i + 200000];
+        printf("#%u : ",node->id);
+        for(int j = 0; j<graph->num_intervals; j++)
+        {
+            printf("(%u, %u) ",node->intervals[j].left,node->intervals[j].right);
+        }
+        printf("\n");
+    }
+
+    for(int i = 0; i < 1000; i++)
+    {
+        Node* node = graph->nodes[i + 300000];
+        printf("#%u : ",node->id);
+        for(int j = 0; j<graph->num_intervals; j++)
+        {
+            printf("(%u, %u) ",node->intervals[j].left,node->intervals[j].right);
+        }
+        printf("\n");
+    }
+
+    for(int i = 0; i < 1000; i++)
+    {
+        Node* node = graph->nodes[i + 490000];
+        printf("#%u : ",node->id);
+        for(int j = 0; j<graph->num_intervals; j++)
+        {
+            printf("(%u, %u) ",node->intervals[j].left,node->intervals[j].right);
+        }
+        printf("\n");
     }
 }
