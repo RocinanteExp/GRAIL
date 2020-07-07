@@ -42,4 +42,6 @@ void graph_print(Graph *graph, bool verbose, uint32_t index_node);
  */
 void node_print(Node *node, bool verbose); 
 void labels_print(Graph *graph);
+bool graph_print_to_file(char *filename, Graph *graph);
+bool label_print_to_file(char *filename, Graph *graph);
 #endif

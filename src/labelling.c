@@ -20,7 +20,7 @@ struct thread_argument
     uint32_t idx;
     uint32_t rank;
 };
-struct thread_argument_roots 
+/*struct thread_argument_roots 
 {
     Graph* graph;
     uint32_t idx;
@@ -28,15 +28,14 @@ struct thread_argument_roots
     uint32_t root_id;
     pthread_spinlock_t* lock;
     Bitmap* visited_nodes;
-};
+};*/
 static void *setting_intervals(void *thread_argument);
 static void  graph_random_visit(Graph *graph,Bitmap* visited_nodes,uint32_t node_id, uint32_t idx, uint32_t* rank);
-static void *setting_intervals_roots(void *thread_argument);
-static void  graph_random_visit_with_lock(Graph *graph,Bitmap* visited_nodes,uint32_t node_id, uint32_t idx, uint32_t* rank, pthread_spinlock_t* lock);
+//static void *setting_intervals_roots(void *thread_argument);
+//static void  graph_random_visit_with_lock(Graph *graph,Bitmap* visited_nodes,uint32_t node_id, uint32_t idx, uint32_t* rank, pthread_spinlock_t* lock);
 // function to get a random number for roots
 static uint32_t get_ramdom_order_roots(Graph *graph, Bitmap *roots_map) 
 {
-
 #if !DEBUG
     uint32_t j = rand_r(pthread_self()) % graph->num_root_nodes;
 #else
@@ -184,13 +183,13 @@ static void *setting_intervals(void *thread_argument)
     Bitmap* visited_nodes = bitmap_create(graph->num_nodes);
     if(roots_map == NULL)
     {
-        fprintf(stderr, "ERROR IN ALLOCATING BITMAP IN: setting_intervals\n");
-        exit(-1);
+       fprintf(stderr, "ERROR IN ALLOCATING BITMAP IN: setting_intervals\n");
+       pthread_exit((void*)-1);
     }
     if(visited_nodes == NULL)
     {
         fprintf(stderr, "ERROR IN ALLOCATING BITMAP IN: setting_intervals\n");
-        exit(-1);
+        pthread_exit((void*)-1);
     }
     while(num_roots<graph->num_root_nodes)
     {

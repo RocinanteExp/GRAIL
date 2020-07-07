@@ -97,16 +97,17 @@ static void node_set_children(Node* node, char* str)
     uint32_t str_length = strlen(str);
     char* s=malloc(sizeof(char)*(str_length+1));
     char* tok;
+    char * rest;
     //char* context;
     if(strcpy(s, str) == NULL)
     {
         fprintf(stderr, "ERROR: strcpy set_children\n");
         return; 
     }
-
+    rest=s;
     // finding how many children does a node have
-    tok = strtok(s, ": #\n\r");
-    while((tok = strtok(NULL, ": #\n\r")) != NULL)
+    tok = strtok_r(s, ": #\n\r",&rest);
+    while((tok = strtok_r(NULL, ": #\n\r",&rest)) != NULL)
     {
         n++;
     } 
@@ -122,9 +123,9 @@ static void node_set_children(Node* node, char* str)
         fprintf(stderr, "ERROR: strcpy set_children\n");
         return; 
     }
-
-    tok = strtok(s, ": #\n\r");
-    while((tok = strtok(NULL, ": #\n\r")) != NULL && i < n)
+    rest=s;
+    tok = strtok_r(s, ": #\n\r",&rest);
+    while((tok = strtok_r(NULL, ": #\n\r",&rest)) != NULL && i < n)
     {
         node->children[i] = (unsigned int) atoi(tok);
         i++;
@@ -344,9 +345,7 @@ static void *multi_line_read(void *thread_argument) {
 
                for(int i = 0; i < max_valid_nodes; i++) { 
                    Node* curr_node = base_node + i;
-                   pthread_spin_lock(p_lock);
                    node_set_children(curr_node, lines[i]);
-                   pthread_spin_unlock(p_lock);
                    p_graph->nodes[node_ids[i]] = curr_node; 
                    for(int j = 0; j < curr_node->num_children; j++) {
                        bitmap_set_bit(non_root_nodes, curr_node->children[j]);
@@ -443,3 +442,80 @@ void labels_print(Graph *graph)
         printf(" #\n");
     }
 }
+
+static int node_print_out(Node *node, FILE *fout){
+
+    fprintf(fout, "%d: ", node->id);
+    for(int i = 0; i < node->num_children; i++) {
+        int err = fprintf(fout, "%d ", node->children[i]);
+        if(err < 0) {
+            return err;
+        }
+    }
+    
+    int err = fprintf(fout, "#\n");
+    if(err < 0) {
+        return err;
+    }
+
+    return 1;
+}
+
+bool graph_print_to_file(char *filename, Graph *graph) {
+    FILE *fout = fopen(filename, "w");
+    if(fout == NULL) {
+        fprintf(stderr, "fopen failed at graph_print_to_file %s", filename);
+        return false;
+    }
+
+    fprintf(fout, "%u\n", graph->num_nodes);
+    int i = 0;
+    while(i < graph->num_nodes) {
+        int err = node_print_out(graph->nodes[i], fout);
+        if(err < 0) {
+            fprintf(stderr, "failed node_print_out at graph_print_to_file: i %d\n", i);  
+            return false;
+        }
+        i++;
+    }
+
+    return true;
+};
+
+
+bool label_print_to_file(char *filename, Graph *graph) {
+    FILE *fout = fopen(filename, "w");
+    if(fout == NULL) {
+        fprintf(stderr, "fopen failed at label_print_to_file %s", filename);
+        false;
+    }
+
+    const uint32_t tot_nodes = graph->num_nodes;
+    const uint32_t tot_intervals = graph->num_intervals;
+    for(uint32_t i = 0; i < tot_nodes; i++) {
+        Node* node = graph->nodes[i];
+
+        int err = fprintf(fout, "%u: ", node->id);
+        if(err < 0) {
+            fprintf(stderr, "failed label_print_out at graph_print_to_file: #%u\n", i);  
+            return false;
+        }
+
+        for(uint32_t j = 0; j < tot_intervals; j++) {
+            err = fprintf(fout, "[%u, %u] ", node->intervals[j].left, node->intervals[j].right);
+            if(err < 0) {
+                fprintf(stderr, "failed label_print_out at graph_print_to_file: [...] with j %u\n", j);  
+                return false;
+            }
+        }
+
+        err = fprintf(fout, "\n");
+        if(err < 0) {
+            fprintf(stderr, "failed label_print_out at graph_print_to_file: \\n\n");  
+            return false;
+        }
+    }
+
+    return true;
+
+};
