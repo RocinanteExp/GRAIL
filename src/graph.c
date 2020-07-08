@@ -6,7 +6,7 @@
 #include "graph.h"
 #include "bitmap.h"
 #define DEBUG 1 
-#define MAX_THREADS 5 
+#define MAX_THREADS 8 
 
 static void *start_thread(void *thread_argument);
 static void *multi_line_read(void *thread_argument);
@@ -92,19 +92,22 @@ void node_destroy(Node* node)
 
 static void node_set_children(Node* node, char* str)
 {
-    uint32_t n = 0;
-    uint32_t i = 0;
-    char s[strlen(str) + 1]; 
+    uint32_t n=0;
+    uint32_t i=0;
+    uint32_t str_length = strlen(str);
+    char* s=malloc(sizeof(char)*(str_length+1));
+    char* tok;
+    char * rest;
     //char* context;
     if(strcpy(s, str) == NULL)
     {
         fprintf(stderr, "ERROR: strcpy set_children\n");
         return; 
     }
-
+    rest=s;
     // finding how many children does a node have
-    char *tok = strtok(s, ": #\n\r");
-    while((tok = strtok(NULL, ": #\n\r")) != NULL)
+    tok = strtok_r(s, ": #\n\r",&rest);
+    while((tok = strtok_r(NULL, ": #\n\r",&rest)) != NULL)
     {
         n++;
     } 
@@ -120,9 +123,9 @@ static void node_set_children(Node* node, char* str)
         fprintf(stderr, "ERROR: strcpy set_children\n");
         return; 
     }
-
-    tok = strtok(s, ": #\n\r");
-    while((tok = strtok(NULL, ": #\n\r")) != NULL && i < n)
+    rest=s;
+    tok = strtok_r(s, ": #\n\r",&rest);
+    while((tok = strtok_r(NULL, ": #\n\r",&rest)) != NULL && i < n)
     {
         node->children[i] = (unsigned int) atoi(tok);
         i++;
@@ -231,7 +234,7 @@ Graph* graph_create(char *filepath, int num_intervals) {
 
 static void *start_thread(void *thread_argument) {
 
-    uint16_t BUFF_SIZE = 8192; 
+    uint16_t BUFF_SIZE = 10240; 
     char lines[BUFF_SIZE];
 
     struct thread_arg *arg = (struct thread_arg*) thread_argument;
@@ -293,7 +296,6 @@ static void *multi_line_read(void *thread_argument) {
 
     const uint16_t BUFF_SIZE = 8192; 
     const uint8_t NUM_LINES = MAX_THREADS;
-    char lines[NUM_LINES][BUFF_SIZE];
     uint32_t node_ids[NUM_LINES];
 
     struct thread_arg *arg = (struct thread_arg*) thread_argument;
@@ -309,8 +311,8 @@ static void *multi_line_read(void *thread_argument) {
 #endif
         while(true){
             if(*p_cur_iteration < tot_nodes) {
-
                 int max_valid_nodes = NUM_LINES;
+                char lines[NUM_LINES][BUFF_SIZE];
                 for(int i = 0; i < NUM_LINES; i++) {
                     char* err = fgets(lines[i], BUFF_SIZE, fin);
                     if(err == NULL) {
