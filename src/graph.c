@@ -266,9 +266,9 @@ static void *start_thread(void *thread_argument) {
                 free(p_graph);
                 return NULL;
             }   
-            pthread_spin_lock(p_lock);
+            //pthread_spin_lock(p_lock);
             node_set_children(curr_node, lines);
-            pthread_spin_unlock(p_lock);
+           //pthread_spin_unlock(p_lock);
             p_graph->nodes[node_id] = curr_node;
 
             // set the nodes that have incomings edges

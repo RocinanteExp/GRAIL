@@ -76,22 +76,14 @@ void test() {
 
 int main(int argc, char **argv) {
     //Graph* graph = graph_create("../test/input/large/graph2.gra", 5);
-    Graph* graph = graph_create("../test/input/large/graph3.gra", 5);
-    //graph_randomize_labelling(graph);
-  
-   /* clock_t start_seq = clock();
-    graph_randomize_labelling_sequential(graph,5);
-    clock_t end_seq = clock();
-    printf("DIFFERENCE Sequential: %f\n", (double)(end_seq - start_seq) / CLOCKS_PER_SEC);*/
-    //graph_print(graph, true, -1); 
-    //Graph* graph = graph_create("./test/input/v500000e1000.gra", 5);
-    //graph_print(graph, true, 203); 
-    //graph_print(graph, true, 8888); 
-    //graph_print(graph, true, 123456); 
-    //graph_print(graph, true, 399999); 
-    //graph_print(graph, true, 400000); 
-    //graph_print(graph, true, 499999); 
- 
+    Graph* graph = graph_create("../test/input/large/graph4.gra", 5);
+    printf("START LABELLING\n");
+    graph_randomize_labelling(graph);
+    //graph_randomize_labelling_sequential(graph,5);
+    printf("END LABELLING\n");
+    //graph_print(graph,true,-1);
+    //graph_print_to_file("../test/input/large/output.gra",graph);
+    //label_print_to_file("../test/input/large/output.gra",graph);
     return 0;
 
 }

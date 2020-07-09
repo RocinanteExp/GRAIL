@@ -178,27 +178,21 @@ static void *setting_intervals(void *thread_argument)
     uint32_t idx=arg->idx;
     uint32_t rank = arg->rank;
     uint32_t num_roots=0;
-    uint32_t i=0;
-    Bitmap* roots_map = bitmap_create(graph->num_root_nodes);
+    int i=0;
     Bitmap* visited_nodes = bitmap_create(graph->num_nodes);
-    if(roots_map == NULL)
-    {
-       fprintf(stderr, "ERROR IN ALLOCATING BITMAP IN: setting_intervals\n");
-       pthread_exit((void*)-1);
-    }
     if(visited_nodes == NULL)
     {
         fprintf(stderr, "ERROR IN ALLOCATING BITMAP IN: setting_intervals\n");
         pthread_exit((void*)-1);
     }
+    if(graph->num_root_nodes!=0)
+        i= rand_r(pthread_self())%graph->num_root_nodes;
     while(num_roots<graph->num_root_nodes)
     {
-        i=get_ramdom_order_roots(graph, roots_map);
-        bitmap_set_bit(roots_map,i);
         num_roots++;
         graph_random_visit(graph,visited_nodes,graph->root_nodes[i],idx,&rank);
+        i=(i+1)%graph->num_root_nodes;
     }
-    bitmap_destroy(roots_map);
     bitmap_destroy(visited_nodes);
     pthread_exit((void*) 0);
 }
@@ -208,7 +202,6 @@ static void  graph_random_visit(Graph *graph,Bitmap* visited_nodes,uint32_t node
     int j = 0;
     uint32_t num_childrens = 0;
     uint32_t rc = UINT32_MAX;
-    Bitmap* child_map;
     Node* node;
     if(bitmap_test_bit(visited_nodes,node_id))
     {
@@ -216,13 +209,14 @@ static void  graph_random_visit(Graph *graph,Bitmap* visited_nodes,uint32_t node
     }
     node = graph->nodes[node_id];
     bitmap_set_bit(visited_nodes, node_id);
-    child_map = bitmap_create(node->num_children);
+   if(node->num_children>0)
+        j=rand_r(pthread_self())%node->num_children;
+    
     while(num_childrens < node->num_children)
     {
         num_childrens++;
-        j = get_ramdom_order_children(node, child_map);
-        bitmap_set_bit(child_map, j);
         graph_random_visit(graph,visited_nodes,node->children[j],idx,rank);
+        j=(j+1)%node->num_children;
     }
     
     bool first = true; 
@@ -243,5 +237,4 @@ static void  graph_random_visit(Graph *graph,Bitmap* visited_nodes,uint32_t node
     node->intervals[idx].left = MIN(*rank,rc);
     node->intervals[idx].right = *rank;
     *rank=*rank+1;
-    bitmap_destroy(child_map);
 }
