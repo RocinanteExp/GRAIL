@@ -31,6 +31,7 @@ struct thread_argument
 };*/
 static void *setting_intervals(void *thread_argument);
 static void  graph_random_visit(Graph *graph,Bitmap* visited_nodes,uint32_t node_id, uint32_t idx, uint32_t* rank);
+static void ramdom_shuffle(uint32_t* vec,uint32_t size);
 //static void *setting_intervals_roots(void *thread_argument);
 //static void  graph_random_visit_with_lock(Graph *graph,Bitmap* visited_nodes,uint32_t node_id, uint32_t idx, uint32_t* rank, pthread_spinlock_t* lock);
 // function to get a random number for roots
@@ -179,20 +180,32 @@ static void *setting_intervals(void *thread_argument)
     uint32_t rank = arg->rank;
     uint32_t num_roots=0;
     int i=0;
+    uint32_t* roots = malloc(graph->num_root_nodes*sizeof(uint32_t));
+    if(roots==NULL)
+    {
+        fprintf(stderr, "ERROR IN ALLOCATING roots IN: setting_intervals\n");
+        pthread_exit((void*)-1);
+    } 
     Bitmap* visited_nodes = bitmap_create(graph->num_nodes);
     if(visited_nodes == NULL)
     {
         fprintf(stderr, "ERROR IN ALLOCATING BITMAP IN: setting_intervals\n");
         pthread_exit((void*)-1);
     }
-    if(graph->num_root_nodes!=0)
+   /* if(graph->num_root_nodes!=0)
         i= rand_r(pthread_self())%graph->num_root_nodes;
     while(num_roots<graph->num_root_nodes)
     {
         num_roots++;
         graph_random_visit(graph,visited_nodes,graph->root_nodes[i],idx,&rank);
         i=(i+1)%graph->num_root_nodes;
-    }
+    }*/
+    //copy root array
+    for(i=0;i<graph->num_root_nodes;i++)
+        roots[i]=graph->root_nodes[i];
+    ramdom_shuffle(roots,graph->num_root_nodes);
+    for(i=0;i<graph->num_root_nodes;i++)
+        graph_random_visit(graph,visited_nodes,roots[i],idx,&rank);
     bitmap_destroy(visited_nodes);
     pthread_exit((void*) 0);
 }
@@ -237,4 +250,24 @@ static void  graph_random_visit(Graph *graph,Bitmap* visited_nodes,uint32_t node
     node->intervals[idx].left = MIN(*rank,rc);
     node->intervals[idx].right = *rank;
     *rank=*rank+1;
+}
+
+static void ramdom_shuffle(uint32_t* vec,uint32_t size)
+{
+    uint32_t n=0,j=0,i=0,step=0;
+    if(size>1000000)
+        n=1000000;
+    else
+    {
+        n=size;
+    }
+    for(step=0;step<n;step++)
+    {
+        i=rand_r(pthread_self())%size;
+        j=rand_r(pthread_self())%size;
+        uint32_t tmp=vec[i];
+        vec[i]=vec[j];
+        vec[j]=tmp;
+    }
+    return;
 }

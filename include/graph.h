@@ -1,3 +1,4 @@
+  
 #ifndef GRAPH_H_GUARD
 #define GRAPH_H_GUARD
 #include "bitmap.h"
@@ -30,7 +31,6 @@ Node* node_create(uint32_t num_intervals, uint32_t node_id);
 //Free memory and destroy node
 void node_destroy(Node* node);
 
-
 Graph* graph_create(char *filepath, int num_intervals);
 void graph_destroy(Graph *graph);
 /* Print a graph. If verbose is on, it will print for each node, besides the children ids, the labels 
@@ -41,7 +41,11 @@ void graph_print(Graph *graph, bool verbose, uint32_t index_node);
 /* Print a node. In the verbose version, it will print, besides the children ids, the labels 
  */
 void node_print(Node *node, bool verbose); 
+
+// Print a graph to filepath with option "w"
+bool graph_print_to_file(char *filename, Graph *graph); 
+// Print the labels to filepath with option "w"
+bool label_print_to_file(char *filename, Graph *graph); 
+
 void labels_print(Graph *graph);
-bool graph_print_to_file(char *filename, Graph *graph);
-bool label_print_to_file(char *filename, Graph *graph);
 #endif

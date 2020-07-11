@@ -13,6 +13,8 @@ static void *multi_line_read(void *thread_argument);
 //Set the childrens of a node using the string red from the file
 static void node_set_children(Node* node, char* str);
 
+static void node_set_children2(Node *node, const char* str);
+
 static Bitmap* non_root_nodes = NULL;
 static struct thread_arg {
     FILE *fin;
@@ -89,7 +91,51 @@ void node_destroy(Node* node)
     free(node);
 
 }
+static void node_set_children2(Node* node, const char* str)
+{
+    uint32_t str_length = strlen(str);
+    int begin_index = 0; 
+    uint32_t numbers[1024] = {0};
+    uint32_t next = 0;
+    for(int i = 0; i < str_length; i++) {
+        if(str[i] >= 48 && str[i] <= 57) { // 48 == '0'; 57 == '9'
+            if(begin_index == -1) {
+                begin_index = i;
+            }
+        }
+        else if (str[i] == 32 || str[i] == 58) { // 32 == space; 58 == :
+            if(begin_index != -1) {
+                numbers[next] = atoi(str + begin_index);
+                next++;
+                if(next >= 1024) {
+                    printf("OVERFLOWWWWWWWWWWWWWWWWWWWWWWWWW\n");
+                    exit(1);
+                }
+                begin_index = -1;
+            }
+        }
+        else if (str[i] == 35 || str[i] == 13 || str[i] == 10) { // 35 = #; 13 = carriage return; 10 = new line feed
+            break;
+        }
+        else {
+            printf("UNKNOWN CHARACTER %d\n", str[i]);
+        }
+    }
 
+    next = next - 1; // skip the node id
+    node->children = malloc(next * sizeof(uint32_t));
+    if(node->children == NULL) {
+        fprintf(stderr, "failed malloc on node_set_children2\n");
+        exit(1);
+    }
+    memcpy(node->children, &numbers[1], next * sizeof(uint32_t)); 
+    node->num_children = next;
+    //for(int i = 0; i < next; i++) {
+    //   printf("children [%d] = %u number[%d] = %u\n", i, node->children[i], i, numbers[i]);
+    //}
+
+    //free(numbers - 1);
+}
 static void node_set_children(Node* node, char* str)
 {
     uint32_t n=0;
@@ -345,7 +391,7 @@ static void *multi_line_read(void *thread_argument) {
 
                for(int i = 0; i < max_valid_nodes; i++) { 
                    Node* curr_node = base_node + i;
-                   node_set_children(curr_node, lines[i]);
+                   node_set_children2(curr_node, lines[i]);
                    p_graph->nodes[node_ids[i]] = curr_node; 
                    for(int j = 0; j < curr_node->num_children; j++) {
                        bitmap_set_bit(non_root_nodes, curr_node->children[j]);

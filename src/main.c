@@ -76,11 +76,12 @@ void test() {
 
 int main(int argc, char **argv) {
     //Graph* graph = graph_create("../test/input/large/graph2.gra", 5);
-    Graph* graph = graph_create("../test/input/large/graph4.gra", 5);
+    Graph* graph = graph_create("../test/input/large/arXiv_sub_6000-1.gra", 5);
     printf("START LABELLING\n");
     graph_randomize_labelling(graph);
     //graph_randomize_labelling_sequential(graph,5);
     printf("END LABELLING\n");
+    query_init("../test/input/large/graph1.que",graph);
     //graph_print(graph,true,-1);
     //graph_print_to_file("../test/input/large/output.gra",graph);
     //label_print_to_file("../test/input/large/output.gra",graph);
