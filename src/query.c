@@ -38,7 +38,7 @@ static is_first = true;
 #endif
 
 #if MULTITHREAD
-static bool query_is_reachable_multi(uint32_t source_id, uint32_t dest_id, Graph* graph, Bitmap *vst_nodes);
+ bool query_is_reachable_multi(uint32_t source_id, uint32_t dest_id, Graph* graph, Bitmap *vst_nodes);
 static void *thread_starting_func(void *argument);
 #endif
 
@@ -281,7 +281,7 @@ static bool is_a_possible_path(Node* source, Node* dest) {
     return true;
 }
 
-static bool query_is_reachable_multi(uint32_t source_id, uint32_t dest_id, Graph* graph, Bitmap *vst_nodes){
+ bool query_is_reachable_multi(uint32_t source_id, uint32_t dest_id, Graph* graph, Bitmap *vst_nodes){
 
 #if DEBUG
     //fprintf(stdout, "src %d -> dest %d\n", source_id, dest_id);

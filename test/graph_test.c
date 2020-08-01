@@ -4,15 +4,21 @@
 #include <stdio.h>
 START_TEST (test_graph_create)
 {
-    Graph* graph= graph_create("test/input/grafo20.gra",2);
-    ck_assert(graph->num_nodes==20);
-    ck_assert(graph->nodes[0]->id==0);
-    ck_assert(graph->nodes[0]->num_children==1);
-    ck_assert(graph->num_root_nodes==9);
-    ck_assert(graph->root_nodes[0]==0);
-    ck_assert(graph->root_nodes[2]==2);
+    Graph* graph= graph_create("../test/input/grafo20.gra",5);
+    ck_assert(graph!=NULL);
+    ck_assert_msg(graph->num_nodes==20,"value should have been 20 but it is %d",graph->num_nodes);
+    ck_assert_msg(graph->nodes[0]->id==0,"value should have been 0 but it is %d",graph->nodes[0]->id);
+    ck_assert_msg(graph->nodes[0]->num_children==1,"value should have been 1 but it is %d",graph->nodes[0]->num_children);
+    ck_assert_msg(graph->num_root_nodes==9,"value should have been 9 but it is %d",graph->num_root_nodes);
+    ck_assert_msg(graph->root_nodes[0]==0,"value should have been 0 but it is %d",graph->root_nodes[0]);
+    ck_assert_msg(graph->root_nodes[2]==2,"value should have been 2 but it is %d",graph->root_nodes[2]);
+    ck_assert_msg(graph->nodes[18]->id==18,"value should have been 18 but it is %d",graph->nodes[18]->id);
+    ck_assert_msg(graph->nodes[18]->num_children==0,"value should have been 0 but it is %d",graph->nodes[18]->num_children);
+    ck_assert_msg(graph->num_intervals==5,"value should have been 5 but it is %d",graph->num_intervals);
+    
 }
 END_TEST
+
 Suite* graph_suite(void)
 {
     Suite* s;
