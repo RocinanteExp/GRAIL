@@ -31,8 +31,9 @@ Node* node_create(uint32_t num_intervals, uint32_t node_id)
         return NULL;
 
     node->intervals = malloc(num_intervals * sizeof(Label));
-    for(int i = 0; i < num_intervals; i++)
-        node->intervals[i]= label_init(UINT32_MAX,UINT32_MAX);
+    memset(node->intervals, -1, num_intervals * sizeof(Label));
+    //for(int i = 0; i < num_intervals; i++)
+    //    node->intervals[i]= label_init(UINT32_MAX,UINT32_MAX);
 
     node->id = node_id;
     node->children = NULL;
@@ -41,7 +42,6 @@ Node* node_create(uint32_t num_intervals, uint32_t node_id)
     node->num_intervals = num_intervals;
     
     return node;
-
 }
 
 Node* node_create_multiple(uint32_t num_intervals, uint32_t* node_ids, uint32_t num_nodes)
