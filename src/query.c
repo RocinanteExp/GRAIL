@@ -12,6 +12,7 @@
     #define MAX_THREADS 4
 #endif
 #define DEBUG 1 
+#define TEST 1 
 /* fill the "queries" with the query read from the file at filepath
  * To access the ith query stored in "queries" use:
  *      queries[i*2] is the source node 
@@ -19,6 +20,9 @@
  * Return value: number of queries stored in "queries"
  */
 static uint32_t query_read_from_file(char *filepath, uint32_t *queries);
+static void *thread_starting_func(void *argument);
+static void query_to_file(char *filepath);
+void query_init(char *filepath, Graph *grafo);
 
 static uint32_t *queries = NULL;
 static uint32_t *thread_query_indeces = NULL; 
@@ -28,25 +32,20 @@ static sem_t sem;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; 
 static bool *done_threads = NULL;
 
+
 #if MULTITHREAD
 static Bitmap* visited_nodes_multi[MAX_THREADS];
 #else
 static Bitmap *visited_nodes = NULL;
-#if DEBUG
-static is_first = true;
+    #if DEBUG
+    static is_first = true;
+    #endif
 #endif
-#endif
-
-#if MULTITHREAD
- bool query_is_reachable_multi(uint32_t source_id, uint32_t dest_id, Graph* graph, Bitmap *vst_nodes);
-static void *thread_starting_func(void *argument);
-#endif
-
 
 // TODO write to filepath
-void query_to_file(char *filepath){
+static void query_to_file(char *filepath) {
     uint32_t done = 0;
-    FILE *fout = fopen("../test/input/grafo_risultati.txt", "w");
+    FILE *fout = fopen("test/input/grafo_risultati.txt", "w");
 
     while(done < MAX_THREADS) {
         sem_wait(&sem);
@@ -77,12 +76,10 @@ void query_to_file(char *filepath){
         }
 
         done++;
-    
     }
-    
-}
+};
 
-void query_init(char *filepath, Graph *grafo){
+void query_init(char *filepath, Graph *grafo) {
 
    queries = malloc(2 * sizeof(uint32_t) * MAX_QUERIES); 
    if(queries == NULL){
@@ -142,14 +139,13 @@ void query_init(char *filepath, Graph *grafo){
    if(num_queries_per_thread == 0) {
        thread_query_indeces = malloc(2 * sizeof(uint32_t));
        thread_query_indeces[0] = start_index;
-       thread_query_indeces[1] =  num_tot_queries;
-       uint32_t id=0;
-       int err = pthread_create(&thread_ids[0], NULL, thread_starting_func, (void*) &id); 
+       thread_query_indeces[1] = num_tot_queries;
+
+       int err = pthread_create(&thread_ids[0], NULL, thread_starting_func, (void*) 0); 
        if(err != 0) {
            fprintf(stderr, "ERROR: pthread_create 0 with num_queries_per_thread == 0");
            exit(2);
        };
-
        pthread_join(thread_ids[0], NULL);
    }
    else {
@@ -164,25 +160,16 @@ void query_init(char *filepath, Graph *grafo){
            fprintf(stdout, "thread_query_indeces %d %d %d\n", j, thread_query_indeces[j*2], thread_query_indeces[j*2+1]);
        }
 #endif
-    start_index=0;
        for(int i = 0; i < MAX_THREADS; i++) {
            thread_query_indeces[i*2] = start_index;
-           thread_query_indeces[i*2 + 1] = (i != (MAX_THREADS - 1) )? start_index + num_queries_per_thread : num_tot_queries;  
+           thread_query_indeces[i*2 + 1] = i != (MAX_THREADS - 1) ? start_index + num_queries_per_thread : num_tot_queries;  
            start_index = thread_query_indeces[i*2 + 1];
-       }
-       int *ids=malloc(MAX_THREADS*sizeof(int));
-       for( int j=0;j<MAX_THREADS;j++)
-       {
-           ids[j]=j;
-           int err = pthread_create(&thread_ids[j], NULL, thread_starting_func, (void*) &ids[j]); 
+
+           int err = pthread_create(&thread_ids[i], NULL, thread_starting_func, (void*) i); 
            if(err != 0) {
-               fprintf(stderr, "ERROR: pthread_create %d", j);
+               fprintf(stderr, "ERROR: pthread_create %d", i);
                exit(2);
            };
-       }
-       //waiting threads that are solving the queries
-       for(int i = 0; i < MAX_THREADS; i++) {
-           pthread_join(thread_ids[i], NULL);
        }
         
        pthread_t printer_id;
@@ -191,6 +178,12 @@ void query_init(char *filepath, Graph *grafo){
            fprintf(stderr, "ERROR: pthread_create printer\n");
            exit(2);
        };
+        
+       //waiting threads that are solving the queries
+       for(int i = 0; i < MAX_THREADS; i++) {
+           pthread_join(thread_ids[i], NULL);
+       }
+        
        //waiting thread that is printing the solutions
        pthread_join(printer_id, NULL);
        sem_destroy(&sem);
@@ -211,8 +204,7 @@ void query_init(char *filepath, Graph *grafo){
 
 static void *thread_starting_func(void *argument) {
 
-    uint32_t* arg = (uint32_t*) argument;
-    uint32_t id = *arg;
+    uint32_t id = (uint32_t) argument;
     uint32_t start_index = thread_query_indeces[id*2];
     uint32_t end_index = thread_query_indeces[id*2 + 1];;
 
@@ -232,7 +224,8 @@ static void *thread_starting_func(void *argument) {
     pthread_mutex_unlock(&mutex);
     sem_post(&sem);
     pthread_exit(NULL);
-}
+
+};
 
 static uint32_t query_read_from_file(char *filepath, uint32_t *queries){
 
@@ -281,11 +274,10 @@ static bool is_a_possible_path(Node* source, Node* dest) {
     return true;
 }
 
- bool query_is_reachable_multi(uint32_t source_id, uint32_t dest_id, Graph* graph, Bitmap *vst_nodes){
-
-#if DEBUG
-    //fprintf(stdout, "src %d -> dest %d\n", source_id, dest_id);
+#if !TEST
+static 
 #endif
+bool query_is_reachable_multi(uint32_t source_id, uint32_t dest_id, Graph* graph, Bitmap *vst_nodes){
 
     if(source_id == dest_id)
         return true;
@@ -307,13 +299,6 @@ static bool is_a_possible_path(Node* source, Node* dest) {
 
     if(!is_a_possible_path(src_node, dst_node))
         return false;
-
-#if 0 
-    if(is_first) {
-        fprintf(stdout, "recursing %d %d\n", source_id, dest_id);   
-        is_first = true;
-    }
-#endif
 
     // check if it's a false positive
     for(int i = 0; i < num_children_src; i++) {
