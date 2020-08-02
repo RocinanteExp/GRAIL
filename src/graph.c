@@ -84,7 +84,6 @@ static void node_set_children(Node* node, const char* str)
                     exit(1);
                 }
                 begin_index = -1;
-        return graph;
             }
         }
         else if (str[i] == 35 || str[i] == 13 || str[i] == 10) { // 35 = #; 13 = carriage return; 10 = new line feed
