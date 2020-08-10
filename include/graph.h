@@ -1,4 +1,3 @@
-  
 #ifndef GRAPH_H_GUARD
 #define GRAPH_H_GUARD
 #include "bitmap.h"

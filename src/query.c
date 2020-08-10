@@ -1,10 +1,12 @@
-#include "query.h"
-#include "labelling.h"
 #include <stdlib.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <stdio.h>
 #include <time.h>
+#include "query.h"
+#include "label.h"
+#include "constants.h"
+
 #define MAX_LENGTH_BUFFER 30 // max node_id = 2^32 - 1 is equivalent to 10 char of 1 byte. We multiple by 2 and rounded to 30. 
 #define MAX_QUERIES 75000 
 #define MULTITHREAD 1

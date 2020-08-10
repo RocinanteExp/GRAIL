@@ -1,11 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "label.h"
-#include "graph.h"
-#include "labelling.h"
-#include "query.h"
 #include <time.h>
 #include <pthread.h>
+#include "graph.h"
+#include "label.h"
+#include "query.h"
+#include "constants.h"
 
 int main(int argc, char **argv) {
 

@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include "bitmap.h"
 
-static int SIZE_CHUNK = (sizeof(int) * 8);
+const static int SIZE_CHUNK = (sizeof(int) * 8);
 
 Bitmap* bitmap_create(size_t num_bits){
    //computing the ceiling of num_bits / SIZE_CHUNK 
