@@ -1,5 +1,5 @@
-#ifndef LABELING_H_GUARD
-#define LABELING_H_GUARD
+#ifndef LABEL_H
+#define LABEL_H
 #include "bitmap.h"
 #include "graph.h"
 #include <stdint.h>
