@@ -171,14 +171,14 @@ Graph* graph_create(char *filepath, int num_intervals)
         exit(1);
     };
 
-    pthread_t thread_ids[MAX_THREADS];
+    pthread_t thread_ids[MAX_THREADS_GRAPH];
     struct thread_arg thread_arg = {
         .fin = fin, .graph = p_graph, .num_intervals = num_intervals,
         .curr_iteration = &curr_iteration, .tot_nodes = num_nodes, .lock = &s_lock,
         .inc_edge_nodes = b_incoming_edge_nodes
     }; 
 
-    for(int i = 0; i < MAX_THREADS; i++) {
+    for(int i = 0; i < MAX_THREADS_GRAPH; i++) {
         int err = pthread_create(&thread_ids[i], NULL, thread_entry_point, (void*) &thread_arg); 
         if(err != 0) {
             fprintf(stderr, "FAILED creating %d thread", i);
@@ -187,7 +187,7 @@ Graph* graph_create(char *filepath, int num_intervals)
         };
     }
 
-    for(int i = 0; i < MAX_THREADS; i++) {
+    for(int i = 0; i < MAX_THREADS_GRAPH; i++) {
         pthread_join(thread_ids[i], NULL);
     }
 
@@ -231,7 +231,7 @@ static uint32_t parse_node_id(const char* buf) {
 static void* thread_entry_point(void *thread_argument) {
 
     const uint16_t BUFF_SIZE = 10240; 
-    const uint16_t NUM_LINES = MAX_THREADS;
+    const uint16_t NUM_LINES = MAX_THREADS_GRAPH;
     char lines[NUM_LINES][BUFF_SIZE];
     uint32_t node_ids[NUM_LINES];
 
@@ -258,8 +258,8 @@ static void* thread_entry_point(void *thread_argument) {
                     }
                     node_ids[i] = parse_node_id(lines[i]);
                     if(node_ids[i] == -1) {
-                        fprintf(stderr, "FAILED parsing node id at thread %d\n", pthread_self());
-                        fprintf(stderr, "Exiting...", pthread_self());
+                        fprintf(stderr, "FAILED parsing node id at thread %ld\n", pthread_self());
+                        fprintf(stderr, "Exiting...");
                         exit(3);
                     }
                 }

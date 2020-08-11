@@ -9,12 +9,7 @@
 
 #define MAX_LENGTH_BUFFER 30 // max node_id = 2^32 - 1 is equivalent to 10 char of 1 byte. We multiple by 2 and rounded to 30. 
 #define MAX_QUERIES 75000 
-#define MULTITHREAD 1
-#if MULTITHREAD
-    #define MAX_THREADS 4
-#endif
-#define DEBUG 1 
-#define TEST 1 
+
 /* fill the "queries" with the query read from the file at filepath
  * To access the ith query stored in "queries" use:
  *      queries[i*2] is the source node 
@@ -23,7 +18,7 @@
  */
 static uint32_t query_read_from_file(char *filepath, uint32_t *queries);
 static void *thread_starting_func(void *argument);
-static void query_to_file(char *filepath);
+static void *query_to_file(void *filepath);
 void query_init(char *filepath, Graph *grafo);
 
 static uint32_t *queries = NULL;
@@ -36,7 +31,7 @@ static bool *done_threads = NULL;
 
 
 #if MULTITHREAD
-static Bitmap* visited_nodes_multi[MAX_THREADS];
+static Bitmap* visited_nodes_multi[MAX_THREADS_QUERY];
 #else
 static Bitmap *visited_nodes = NULL;
     #if DEBUG
@@ -45,16 +40,16 @@ static Bitmap *visited_nodes = NULL;
 #endif
 
 // TODO write to filepath
-static void query_to_file(char *filepath) {
+static void *query_to_file(void *path) {
     uint32_t done = 0;
     FILE *fout = fopen("test/input/grafo_risultati.txt", "w");
 
-    while(done < MAX_THREADS) {
+    while(done < MAX_THREADS_QUERY) {
         sem_wait(&sem);
         uint32_t start_index = -1;
         uint32_t end_index = -1;
 
-        for(int i = 0; i < MAX_THREADS; i++) {
+        for(int i = 0; i < MAX_THREADS_QUERY; i++) {
             pthread_mutex_lock(&mutex);
             if(done_threads[i] == true) {
                 pthread_mutex_unlock(&mutex);
@@ -79,6 +74,8 @@ static void query_to_file(char *filepath) {
 
         done++;
     }
+
+    return query_to_file;
 };
 
 void query_init(char *filepath, Graph *grafo) {
@@ -95,13 +92,13 @@ void query_init(char *filepath, Graph *grafo) {
        exit(1);
    }
 
-   done_threads = malloc(MAX_THREADS * sizeof(bool));
+   done_threads = malloc(MAX_THREADS_QUERY * sizeof(bool));
    if(done_threads == NULL){
        fprintf(stderr, "FAILED malloc of done_threads at query_init\n");
        exit(1);
    }
 
-   for(uint32_t i = 0; i < MAX_THREADS; i++) {
+   for(uint32_t i = 0; i < MAX_THREADS_QUERY; i++) {
        done_threads[i] = false;
    }
 
@@ -120,7 +117,7 @@ void query_init(char *filepath, Graph *grafo) {
 #endif
 
 #if MULTITHREAD
-   for(uint32_t i = 0; i < MAX_THREADS; i++) {
+   for(uint32_t i = 0; i < MAX_THREADS_QUERY; i++) {
        visited_nodes_multi[i] = bitmap_create(graph->num_nodes);
        if(visited_nodes_multi[i] == NULL) {
            fprintf(stderr, "FAILED bitmap_create at query_init for visited_nodes_multi\n");
@@ -135,9 +132,9 @@ void query_init(char *filepath, Graph *grafo) {
 #endif
 
 #if MULTITHREAD
-   pthread_t thread_ids[MAX_THREADS];
+   pthread_t thread_ids[MAX_THREADS_QUERY];
    uint32_t start_index = 0;
-   uint32_t num_queries_per_thread = num_tot_queries / MAX_THREADS;
+   uint32_t num_queries_per_thread = num_tot_queries / MAX_THREADS_QUERY;
    if(num_queries_per_thread == 0) {
        thread_query_indeces = malloc(2 * sizeof(uint32_t));
        thread_query_indeces[0] = start_index;
@@ -152,19 +149,19 @@ void query_init(char *filepath, Graph *grafo) {
    }
    else {
        sem_init(&sem, 0, 0);
-       thread_query_indeces = malloc(MAX_THREADS * 2 * sizeof(uint32_t));
-       for(int j = 0; j < MAX_THREADS; j++) {
+       thread_query_indeces = malloc(MAX_THREADS_QUERY * 2 * sizeof(uint32_t));
+       for(int j = 0; j < MAX_THREADS_QUERY; j++) {
            thread_query_indeces[j*2] = -1;
            thread_query_indeces[j*2 + 1] = -1;
        }
 #if DEBUG
-       for(int j = 0; j < MAX_THREADS; j++) {
+       for(int j = 0; j < MAX_THREADS_QUERY; j++) {
            fprintf(stdout, "thread_query_indeces %d %d %d\n", j, thread_query_indeces[j*2], thread_query_indeces[j*2+1]);
        }
 #endif
-       for(int i = 0; i < MAX_THREADS; i++) {
+       for(int i = 0; i < MAX_THREADS_QUERY; i++) {
            thread_query_indeces[i*2] = start_index;
-           thread_query_indeces[i*2 + 1] = i != (MAX_THREADS - 1) ? start_index + num_queries_per_thread : num_tot_queries;  
+           thread_query_indeces[i*2 + 1] = i != (MAX_THREADS_QUERY - 1) ? start_index + num_queries_per_thread : num_tot_queries;  
            start_index = thread_query_indeces[i*2 + 1];
 
            int err = pthread_create(&thread_ids[i], NULL, thread_starting_func, (void*) i); 
@@ -182,7 +179,7 @@ void query_init(char *filepath, Graph *grafo) {
        };
         
        //waiting threads that are solving the queries
-       for(int i = 0; i < MAX_THREADS; i++) {
+       for(int i = 0; i < MAX_THREADS_QUERY; i++) {
            pthread_join(thread_ids[i], NULL);
        }
         
@@ -192,7 +189,7 @@ void query_init(char *filepath, Graph *grafo) {
 
    }
 
-   for(int i = 0; i < MAX_THREADS; i++) {
+   for(int i = 0; i < MAX_THREADS_QUERY; i++) {
        bitmap_destroy(visited_nodes_multi[i]);
    }
 #endif

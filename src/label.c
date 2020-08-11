@@ -24,7 +24,7 @@ static void* setting_intervals(void* thread_argument);
 #if !TEST
 static 
 #endif
-void ramdom_shuffle(uint32_t* vec, uint32_t size)
+void random_shuffle(uint32_t* vec, uint32_t size)
 {
     uint32_t n = 0, j = 0, i = 0, step = 0;
 
@@ -123,7 +123,7 @@ static void *setting_intervals(void *thread_argument)
     for(i=0;i<graph->num_root_nodes;i++)
         roots[i]=graph->root_nodes[i];
 #if !TEST
-    ramdom_shuffle(roots,graph->num_root_nodes);
+    random_shuffle(roots,graph->num_root_nodes);
 #endif
     for(i = 0; i < graph->num_root_nodes; i++)
         graph_random_visit(graph,visited_nodes,roots[i],idx,&rank);

@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
 #else
     Graph* graph = graph_create("test/input/grafo20.gra", 2);
     graph_randomize_labelling(graph);
-    graph_print(graph, true, -1); 
+    graph_print_to_stdout(graph, true, -1); 
     query_init("test/input/grafo20_25.que", graph);
 #endif
 
