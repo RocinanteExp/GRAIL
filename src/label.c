@@ -6,8 +6,6 @@
 #include <time.h>
 #include "label.h"
 #include "graph.h"
-#include "bitmap.h"
-#include "constants.h"
 
 // MACRO for MIN
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
@@ -21,7 +19,7 @@ struct thread_argument {
     uint32_t rank;
 };
 
-static void* setting_intervals(void *thread_argument);
+static void* setting_intervals(void* thread_argument);
 
 #if !TEST
 static 
@@ -51,21 +49,21 @@ void ramdom_shuffle(uint32_t* vec, uint32_t size)
 #if !TEST
 static 
 #endif
-void graph_random_visit(Graph *graph,Bitmap* visited_nodes,uint32_t node_id, uint32_t idx, uint32_t* rank)
+void graph_random_visit(Graph* graph, Bitmap* visited_nodes, uint32_t node_id, uint32_t idx, uint32_t* rank)
 {
     int j = 0;
     uint32_t num_childrens = 0;
     uint32_t rc = UINT32_MAX;
-    Node* node = NULL;
 
     if(bitmap_test_bit(visited_nodes,node_id))
     {
         return;
     }
 
-    node = graph->nodes[node_id];
+    Node *node = graph->nodes[node_id];
     bitmap_set_bit(visited_nodes, node_id);
     if(node->num_children>0)
+
 #if TEST
         j = 0;
 #else
@@ -167,14 +165,14 @@ void graph_randomize_labelling(Graph* graph)
 Label label_init(uint32_t l,uint32_t r)
 {
     Label x;
-    x.left=l;
-    x.right=r;
+    x.left = l;
+    x.right = r;
     return x;
 }
 
 bool label_include(Label l1,Label l2)
 {
-    if(l1.left<l2.left || l1.right>l2.right)
+    if(l1.left < l2.left || l1.right > l2.right)
         return false;
     return true;
 }

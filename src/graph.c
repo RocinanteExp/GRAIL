@@ -4,13 +4,12 @@
 #include <time.h>
 #include <pthread.h>
 #include "graph.h"
-#include "bitmap.h"
-#include "constants.h"
 #define ALL_NODES -1
+#define MAGIC_NUMBER 1024
 static void* thread_entry_point(void *thread_argument);
 static void node_add_children(Node *node, const char* str);
 
-static struct thread_arg {
+struct thread_arg {
     FILE *fin;
     Graph *graph;
     pthread_spinlock_t *lock;
@@ -79,8 +78,8 @@ static void node_add_children(Node* node, const char* str)
                 numbers[next] = atoi(str + begin_index);
                 next++;
                 if(next >= 4096) {
-                    fprintf(stdout, "Line is too long:\n%s", str)
-                    fprintf(stout, "Exiting...\n");
+                    fprintf(stdout, "Line is too long:\n%s", str);
+                    fprintf(stdout, "Exiting...\n");
                     exit(3);
                 }
                 begin_index = -1;
@@ -91,7 +90,7 @@ static void node_add_children(Node* node, const char* str)
         }
         else {
             fprintf(stdout, "UNKNOWN CHARACTER %d\n", str[i]);
-            fprintf(stdout, "Exiting...", str[i]);
+            fprintf(stdout, "Exiting...");
             exit(3);
         }
     }
@@ -106,27 +105,27 @@ static void node_add_children(Node* node, const char* str)
     node->num_children = next;
 }
 
-bool find_root_nodes(Graph* p_graph, Bitmap* b_incoming_edge_nodes) 
+int find_root_nodes(Graph* p_graph, Bitmap* b_incoming_edge_nodes) 
 {
     uint32_t next = 0;
-    const uint32_t MAGIC_NUMBER = 1024;
+    uint32_t magic_number = MAGIC_NUMBER;
     for(int i = 0; i < p_graph->num_nodes; i++) {
         if(!bitmap_test_bit(b_incoming_edge_nodes, i)) {
             p_graph->root_nodes[next++] = i;
         }
-        if(next >= MAGIC_NUMBER) {
-            MAGIC_NUMBER *= 2;
-            p_graph->root_nodes = realloc(p_graph->root_nodes, MAGIC_NUMBER * sizeof(uint32_t));
+        if(next >= magic_number) {
+            magic_number *= 2;
+            p_graph->root_nodes = realloc(p_graph->root_nodes, magic_number * sizeof(uint32_t));
             if(p_graph->root_nodes == NULL){
                 free(p_graph->nodes);
                 free(p_graph);
                 fprintf(stderr, "FAILED realloc'ing 'graph->root_nodes' at find_root_nodes\n");
-                return true;
+                return -1;
             }
         }
     }
 
-    return false;
+    return next;
 }
 
 Graph* graph_create(char *filepath, int num_intervals)
@@ -202,14 +201,14 @@ Graph* graph_create(char *filepath, int num_intervals)
         return NULL;
     }
     
-    bool err = find_root_nodes(p_graph, b_incoming_edge_nodes);
-    if(err){
+    int32_t num_root_nodes = find_root_nodes(p_graph, b_incoming_edge_nodes);
+    if(num_root_nodes == -1){
         fprintf(stdout, "FAILED find_root_nodes\n");
         fprintf(stdout, "Exiting...\n");
         exit(3);
     }
 
-    p_graph->num_root_nodes = next;
+    p_graph->num_root_nodes = num_root_nodes;
     p_graph->num_intervals = num_intervals;
 
     bitmap_destroy(b_incoming_edge_nodes);
@@ -242,7 +241,7 @@ static void* thread_entry_point(void *thread_argument) {
     uint32_t tot_nodes = arg->tot_nodes;
     uint32_t *p_curr_iteration = arg->curr_iteration;
     Graph *p_graph = arg->graph;
-    Bitmap *inc_edge_nodes = arg->b_incoming_edge_nodes;
+    Bitmap *inc_edge_nodes = arg->inc_edge_nodes;
     pthread_spinlock_t *p_lock = arg->lock;
 
 #if DEBUG
@@ -324,7 +323,7 @@ void graph_print_to_stdout(Graph* graph, bool verbose, uint32_t index_node)
         fprintf(stdout, "PRINTING GRAPH\n");
         int i = 0;
         while(i < graph->num_nodes){
-            node_print(graph->nodes[i++], verbose);
+            node_print_to_stdout(graph->nodes[i++], verbose);
         }
 
         fprintf(stdout, "%d ROOT NODES\n", graph->num_root_nodes);
@@ -336,7 +335,7 @@ void graph_print_to_stdout(Graph* graph, bool verbose, uint32_t index_node)
         fprintf(stdout, "FINISHED PRINTING GRAPH\n");
     }
     else if (index_node > 0){
-        node_print(graph->nodes[index_node], verbose); 
+        node_print_to_stdout(graph->nodes[index_node], verbose); 
     }
 
 }
@@ -385,7 +384,7 @@ bool graph_print_to_stream(bool to_stdout, char* graph_path_to, bool with_label,
     
     FILE *fout = fopen(graph_path_to, "wb");
     if(fout == NULL) {
-        fprintf(stderr, "FAILED fopen at graph_print_to_file %s", filename);
+        fprintf(stderr, "FAILED fopen at graph_print_to_file %s", graph_path_to);
         return false;
     }
 
