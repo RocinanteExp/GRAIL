@@ -10,35 +10,34 @@
 #define MAX_LENGTH_BUFFER 30 // max node_id = 2^32 - 1 is equivalent to 10 char of 1 byte. We multiple by 2 and rounded to 30. 
 #define MAX_QUERIES 75000 
 
-/* fill the "queries" with the query read from the file at filepath
- * To access the ith query stored in "queries" use:
- *      queries[i*2] is the source node 
- *      queries[i*2 + 1] is the dest node
- * Return value: number of queries stored in "queries"
- */
-static uint32_t query_read_from_file(char *filepath, uint32_t *queries);
-static void *thread_starting_func(void *argument);
+typedef struct {
+    uint32_t src;
+    uint32_t dst;
+} query;
+
+typedef struct {
+    uint32_t start;
+    uint32_t end;
+    Graph *graph;
+#if DEBUG
+    uint32_t id;
+#endif
+} thread_arg;
+
+static uint32_t read_queries_from_file(char *filepath, query *queries);
+static void *query_solver(void *argument);
 static void *query_to_file(void *filepath);
+bool find_path_reachability(uint32_t source_id, uint32_t dest_id, Graph* graph, Bitmap *vst_nodes);
 void query_init(char *filepath, Graph *grafo);
 
-static uint32_t *queries = NULL;
-static uint32_t *thread_query_indeces = NULL; 
+static query *queries = NULL;
 static Bitmap *query_results = NULL; 
-static Graph *graph = NULL;
 static sem_t sem; 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; 
 static bool *done_threads = NULL;
-
-
-#if MULTITHREAD
 static Bitmap* visited_nodes_multi[MAX_THREADS_QUERY];
-#else
-static Bitmap *visited_nodes = NULL;
-    #if DEBUG
-    static is_first = true;
-    #endif
-#endif
 
+/*
 // TODO write to filepath
 static void *query_to_file(void *path) {
     uint32_t done = 0;
@@ -77,122 +76,125 @@ static void *query_to_file(void *path) {
 
     return query_to_file;
 };
+*/
 
-void query_init(char *filepath, Graph *grafo) {
+static uint32_t compute_thread_query_indeces(uint32_t tot_queries, uint32_t max_threads, uint32_t *query_indeces) {
 
-   queries = malloc(2 * sizeof(uint32_t) * MAX_QUERIES); 
+   const uint32_t num_queries_per_thread = tot_queries / max_threads;
+   const uint32_t tot_running_threads = num_queries_per_thread == 0 ? 1 : MAX_THREADS_QUERY;
+   uint32_t start_index = 0;
+
+   for(int i = 0; i < tot_running_threads; i++) {
+       query_indeces[i*2] = start_index;
+       if(i != MAX_THREADS_QUERY - 1)
+           query_indeces[i*2 + 1] = start_index + num_queries_per_thread;
+       else
+           query_indeces[i*2 + 1] = tot_queries; 
+
+       start_index = query_indeces[i*2 + 1];
+   }
+
+   return tot_running_threads;
+}
+
+void query_init(char *filepath, Graph *g) {
+
+   Graph *graph = g;
+   queries = malloc(MAX_QUERIES * sizeof(query));
    if(queries == NULL){
-       fprintf(stderr, "FAILED malloc at query_init\n");
-       exit(1);
+       fprintf(stderr, "FAILED malloc'ing queries at query_init\n");
+       exit(3);
    }
 
    query_results = bitmap_create(MAX_QUERIES); 
    if(query_results == NULL){
        fprintf(stderr, "FAILED bitmap_create at query_init\n");
-       exit(1);
+       exit(4);
    }
 
    done_threads = malloc(MAX_THREADS_QUERY * sizeof(bool));
    if(done_threads == NULL){
        fprintf(stderr, "FAILED malloc of done_threads at query_init\n");
-       exit(1);
+       exit(3);
    }
 
    for(uint32_t i = 0; i < MAX_THREADS_QUERY; i++) {
        done_threads[i] = false;
    }
 
-   graph = grafo;
 
 #if DEBUG
    fprintf(stdout, "READING queries from %s...\n", filepath);
    clock_t start = clock();
 #endif
 
-   uint32_t num_tot_queries = query_read_from_file(filepath, queries);
+   uint32_t num_tot_queries = read_queries_from_file(filepath, queries);
 
 #if DEBUG
    clock_t end = clock();
    printf("Read %d queries. It took %fs\n", num_tot_queries, (double)(end - start) / CLOCKS_PER_SEC);
 #endif
 
-#if MULTITHREAD
-   for(uint32_t i = 0; i < MAX_THREADS_QUERY; i++) {
-       visited_nodes_multi[i] = bitmap_create(graph->num_nodes);
-       if(visited_nodes_multi[i] == NULL) {
-           fprintf(stderr, "FAILED bitmap_create at query_init for visited_nodes_multi\n");
-           exit(2);
-       }
-   }
-#endif
-
 #if DEBUG
-   fprintf(stdout, "SOLVING QUERIES ...\n"); 
+   fprintf(stdout, "STARTING SOLVING QUERIES ...\n"); 
    start = clock();
 #endif
 
-#if MULTITHREAD
    pthread_t thread_ids[MAX_THREADS_QUERY];
-   uint32_t start_index = 0;
-   uint32_t num_queries_per_thread = num_tot_queries / MAX_THREADS_QUERY;
-   if(num_queries_per_thread == 0) {
-       thread_query_indeces = malloc(2 * sizeof(uint32_t));
-       thread_query_indeces[0] = start_index;
-       thread_query_indeces[1] = num_tot_queries;
+   uint32_t thread_query_indeces[MAX_THREADS_QUERY * 2];
+   const uint32_t num_running_threads = compute_thread_query_indeces(num_tot_queries, MAX_THREADS_QUERY, thread_query_indeces);
 
-       int err = pthread_create(&thread_ids[0], NULL, thread_starting_func, (void*) 0); 
-       if(err != 0) {
-           fprintf(stderr, "ERROR: pthread_create 0 with num_queries_per_thread == 0");
-           exit(2);
-       };
-       pthread_join(thread_ids[0], NULL);
-   }
-   else {
-       sem_init(&sem, 0, 0);
-       thread_query_indeces = malloc(MAX_THREADS_QUERY * 2 * sizeof(uint32_t));
-       for(int j = 0; j < MAX_THREADS_QUERY; j++) {
-           thread_query_indeces[j*2] = -1;
-           thread_query_indeces[j*2 + 1] = -1;
-       }
 #if DEBUG
-       for(int j = 0; j < MAX_THREADS_QUERY; j++) {
-           fprintf(stdout, "thread_query_indeces %d %d %d\n", j, thread_query_indeces[j*2], thread_query_indeces[j*2+1]);
-       }
+   for(int j = 0; j < num_running_threads; j++) {
+       fprintf(stdout, "thread_query_indeces %d %d %d\n", j, thread_query_indeces[j*2], thread_query_indeces[j*2+1]);
+   }
 #endif
-       for(int i = 0; i < MAX_THREADS_QUERY; i++) {
-           thread_query_indeces[i*2] = start_index;
-           thread_query_indeces[i*2 + 1] = i != (MAX_THREADS_QUERY - 1) ? start_index + num_queries_per_thread : num_tot_queries;  
-           start_index = thread_query_indeces[i*2 + 1];
 
-           int err = pthread_create(&thread_ids[i], NULL, thread_starting_func, (void*) i); 
-           if(err != 0) {
-               fprintf(stderr, "ERROR: pthread_create %d", i);
-               exit(2);
-           };
+   for(uint32_t i = 0; i < num_running_threads; i++) {
+       visited_nodes_multi[i] = bitmap_create(graph->num_nodes);
+       if(visited_nodes_multi[i] == NULL) {
+           fprintf(stderr, "FAILED bitmap_create at query_init for visited_nodes_multi\n");
+           exit(3);
        }
-        
-       pthread_t printer_id;
-       int err = pthread_create(&printer_id, NULL, query_to_file, NULL); 
-       if(err != 0) {
-           fprintf(stderr, "ERROR: pthread_create printer\n");
-           exit(2);
-       };
-        
-       //waiting threads that are solving the queries
-       for(int i = 0; i < MAX_THREADS_QUERY; i++) {
-           pthread_join(thread_ids[i], NULL);
-       }
-        
-       //waiting thread that is printing the solutions
-       pthread_join(printer_id, NULL);
-       sem_destroy(&sem);
-
    }
 
-   for(int i = 0; i < MAX_THREADS_QUERY; i++) {
+   thread_arg args[num_running_threads];
+   sem_init(&sem, 0, 0);
+
+   for(int i = 0; i < num_running_threads; i++) {
+       args[i].start = thread_query_indeces[i*2];
+       args[i].end = thread_query_indeces[i*2 + 1];
+       args[i].graph = graph; 
+#if DEBUG
+       args[i].id = i;
+#endif
+       int err = pthread_create(&thread_ids[i], NULL, query_solver, &args[i]); 
+       if(err != 0) {
+           fprintf(stderr, "FAILED pthread_create for thread %d at query_init\n", i);  
+           exit(6);
+       };
+   }
+        
+   pthread_t thread_printer_id;
+   //int err = pthread_create(&thread_printer_id, NULL, query_to_file, NULL); 
+   int err = pthread_create(&thread_printer_id, NULL, NULL, NULL); 
+   if(err != 0) {
+       fprintf(stderr, "FAILED pthread_create for thread printer ath query_init\n");
+       exit(6);
+   };
+        
+   //waiting threads that are solving the queries
+   for(int i = 0; i < num_running_threads; i++) {
+       pthread_join(thread_ids[i], NULL);
+   }
+   //waiting thread that is printing the solutions
+   pthread_join(thread_printer_id, NULL);
+
+   for(int i = 0; i < num_running_threads; i++) {
        bitmap_destroy(visited_nodes_multi[i]);
    }
-#endif
+
+   sem_destroy(&sem);
 
 #if DEBUG
    end = clock();
@@ -201,19 +203,21 @@ void query_init(char *filepath, Graph *grafo) {
 
 };
 
-static void *thread_starting_func(void *argument) {
+static void *query_solver(void *argument) {
 
-    uint32_t id = (uint32_t) argument;
-    uint32_t start_index = thread_query_indeces[id*2];
-    uint32_t end_index = thread_query_indeces[id*2 + 1];;
+    thread_arg *arg= (thread_arg *) argument;
+    uint32_t start_index = arg->start; 
+    uint32_t end_index = arg->end; 
+    Graph *graph = arg->graph; 
 
 #if DEBUG
-    fprintf(stdout, "THREAD %lu> start_index %d end_index %d id %d\n", pthread_self(), start_index, end_index, id);
+    uint32_t id= arg->id; 
+    fprintf(stdout, "THREAD %lu start_index %u end_index %u id %u\n", pthread_self(), start_index, end_index, id);
 #endif
 
     for(uint32_t i = start_index; i < end_index; i++) {
         bitmap_clear_all(visited_nodes_multi[id]); 
-        if(query_is_reachable_multi(queries[i*2], queries[i*2 + 1], graph, visited_nodes_multi[id])) {
+        if(find_path_reachability(queries[i].src, queries[i].dst, graph, visited_nodes_multi[id])) {
             bitmap_set_bit(query_results, i);
         }
     }
@@ -226,36 +230,37 @@ static void *thread_starting_func(void *argument) {
 
 };
 
-static uint32_t query_read_from_file(char *filepath, uint32_t *queries){
+static uint32_t read_queries_from_file(char *filepath, query *queries) {
 
-    FILE* fp = fopen(filepath, "r");
+#if DEBUG
+    fprintf(stdout, "> starting reading queries from file %s\n", filepath);
+#endif
+
+    FILE *fp = fopen(filepath, "r");
     if(fp == NULL) {
-        fprintf(stderr, "FAILED fopen at query_read_from_file");
-        exit(1);
+        fprintf(stderr, "FAILED fopen at read_queries_from_file");
+        exit(5);
     }
 
     char buff[MAX_LENGTH_BUFFER];
     size_t next = 0;
 
-#if DEBUG
-    fprintf(stdout, "STARTING READING from file %s\n", filepath);
-#endif
 
     while(fgets(buff, MAX_LENGTH_BUFFER, fp)){
-        if(sscanf(buff, "%d %d", &queries[next * 2], &queries[next * 2 + 1]) == 2){  
-#if DEBUG
-            //fprintf(stdout, "Query: %u -> %d %d\n", next + 1, queries[next * 2], queries[next * 2 + 1]);
+        if(sscanf(buff, "%d %d", &queries[next].src, &queries[next].dst) == 2){  
+#if 1 
+            fprintf(stdout, "%d %d", queries[next].src, queries[next].dst);
 #endif
             next++;
         }
         else{
-            fprintf(stderr, "FAILED sscanf at query_read_from_file\n");
+            fprintf(stderr, "FAILED sscanf at read_queries_from_file\n");
             break;
         }
     }
 
 #if DEBUG
-    fprintf(stdout, "FINISHED READING from file %s\n", filepath);
+    fprintf(stdout, "Read %d queries.\nExiting read_queries_from_file\n", next);
 #endif
 
     return next;
@@ -276,7 +281,7 @@ static bool is_a_possible_path(Node* source, Node* dest) {
 #if !TEST
 static 
 #endif
-bool query_is_reachable_multi(uint32_t source_id, uint32_t dest_id, Graph* graph, Bitmap *vst_nodes){
+bool find_path_reachability(uint32_t source_id, uint32_t dest_id, Graph* graph, Bitmap *vst_nodes){
 
     if(source_id == dest_id)
         return true;
@@ -312,7 +317,7 @@ bool query_is_reachable_multi(uint32_t source_id, uint32_t dest_id, Graph* graph
                 possible_path = false;
             
             // recurse if this child leads to a possiple path to "dst_node"
-            if(possible_path && query_is_reachable_multi(curr_child_id, dest_id, graph, vst_nodes)) {
+            if(possible_path && find_path_reachability(curr_child_id, dest_id, graph, vst_nodes)) {
                 return true;
             }
         }
@@ -321,51 +326,3 @@ bool query_is_reachable_multi(uint32_t source_id, uint32_t dest_id, Graph* graph
     return false;
 
 }
-
-#if !MULTITHREAD
- /* check if node with id "source_id" can reach node with id "dest_id"
-  * Return value: true if there is path from "source_id" to "dest_id", otherwise false;
-  */
-bool query_is_reachable(uint32_t source_id, uint32_t dest_id, Graph* graph){
-
-    if(source_id == dest_id)
-        return true;
-
-    bitmap_set_bit(visited_nodes, source_id);
-
-    Node* src_node = graph->nodes[source_id];
-    Node* dst_node = graph->nodes[dest_id];
-    uint32_t num_children_src = src_node->num_children;
-
-    if(!is_a_possible_path(src_node, dst_node))
-        return false;
-
-#if DEBUG
-    if(is_first) {
-        fprintf(stdout, "recursing %d %d\n", source_id, dest_id);   
-        is_first = true;
-    }
-#endif
-
-    // check if it's a false positive
-    for(int i = 0; i < num_children_src; i++) {
-        uint32_t cur_child_id = src_node->children[i]; 
-        // recurse only if child has not been visited  
-        if(!bitmap_test_bit(visited_nodes, cur_child_id)){ 
-            Node* cur_child_node = graph->nodes[cur_child_id];
-            // if a interval of "dst_node" is not contained in the corresponding interval of "cur_child_node" 
-            // then there is not a path from "cur_child_node" to "dst_node".
-            bool possible_path = true;
-            if(!is_a_possible_path(cur_child_node, dst_node))
-                possible_path = false;
-            
-            // recurse if this child leads to a possiple path to "dst_node"
-            if(possible_path && query_is_reachable(cur_child_id, dest_id, graph)) {
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-#endif
