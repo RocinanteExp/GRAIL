@@ -87,12 +87,13 @@ START_TEST (test_random_shuffle)
 }
 END_TEST
 
-START_TEST (test_graph_randomize_labelling)
+START_TEST (test_label_generate_random_labels)
 {
     uint32_t left[] = {1, 6, 7, 1, 1, 1, 13, 11, 1, 11, 3, 7, 1, 11, 18, 13, 13, 18, 11, 7};
     uint32_t right[] = {5, 6, 9, 10, 12, 4, 14, 17, 2, 16, 3, 8, 1, 15, 19, 20, 13, 18, 11, 7};
     Graph* graph = graph_create("test/input/grafo20.gra", 2);
-    graph_randomize_labelling(graph);
+    label_generate_random_labels(graph);
+
     
     for(int i = 0; i < 20; ++i) {
         Node* n = graph->nodes[i];

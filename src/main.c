@@ -15,9 +15,10 @@ int main(int argc, char **argv) {
     query_init("test/input/v500000e1000.que", graph);
 #else
     Graph* graph = graph_create("test/input/grafo20.gra", 2);
-    graph_randomize_labelling(graph);
+    label_generate_random_labels(graph);
     graph_print_to_stdout(graph, true, -1); 
     query_init("test/input/grafo20_25.que", graph);
+    graph_destroy(graph);
 #endif
 
 #if 0

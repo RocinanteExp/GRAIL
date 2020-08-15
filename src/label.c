@@ -121,21 +121,24 @@ static void *setting_intervals(void *thread_argument)
 
     //copy root array
     for(i=0;i<graph->num_root_nodes;i++)
-        roots[i]=graph->root_nodes[i];
+        roots[i] = graph->root_nodes[i];
 #if !TEST
-    random_shuffle(roots,graph->num_root_nodes);
+    random_shuffle(roots, graph->num_root_nodes);
 #endif
     for(i = 0; i < graph->num_root_nodes; i++)
-        graph_random_visit(graph,visited_nodes,roots[i],idx,&rank);
+        graph_random_visit(graph, visited_nodes, roots[i], idx, &rank);
+
     bitmap_destroy(visited_nodes);
+    free(roots);
+
     pthread_exit((void*) 0);
 }
 
-void graph_randomize_labelling(Graph* graph)
+void label_generate_random_labels(Graph* graph)
 {
     uint32_t idx = 0;
-    pthread_t* tids = malloc(graph->num_intervals*sizeof(pthread_t));
-    struct thread_argument* args = malloc(graph->num_intervals*sizeof(struct thread_argument));
+    pthread_t *tids = malloc(graph->num_intervals * sizeof(pthread_t));
+    struct thread_argument *args = malloc(graph->num_intervals * sizeof(struct thread_argument));
     
     for(idx = 0; idx < graph->num_intervals; idx++)
     {
@@ -153,13 +156,16 @@ void graph_randomize_labelling(Graph* graph)
 
     for(idx = 0; idx < graph->num_intervals; idx++)
     {
-       int err= pthread_join(tids[idx],NULL);
-        if(err!=0)
+       int err = pthread_join(tids[idx], NULL);
+        if(err != 0)
         {
-            fprintf(stderr, "ERROR: pthread_join %d", idx);
+            fprintf(stderr, "FAILED pthread_join %d at label_generate_random_labels", idx);
             exit(-2);
         }
     }
+
+    free(args);
+    free(tids);
 }
 
 Label label_init(uint32_t l,uint32_t r)

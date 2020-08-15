@@ -12,10 +12,8 @@ typedef struct label_s {
     uint32_t right;
 } Label;
 
-/* Create the randome labels for the given graph*/
-void graph_randomize_labelling_sequential(Graph* graph, uint32_t num_intevals);
 //parallel fuction for labelling of the graph
-void graph_randomize_labelling(Graph* graph);
+void label_generate_random_labels(Graph* graph);
 
 #if TEST
 void graph_random_visit(Graph* graph, Bitmap* visited_nodes,uint32_t node_id, uint32_t idx, uint32_t* rank);
