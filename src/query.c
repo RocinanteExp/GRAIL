@@ -12,7 +12,14 @@
 typedef struct {
     uint32_t src;
     uint32_t dst;
+} route;
+
+typedef struct {
+    route *routes;
+    Bitmap *res;
+    uint32_t length;
 } query;
+
 
 typedef struct {
     uint32_t start;
@@ -21,72 +28,33 @@ typedef struct {
     uint32_t id;
 } thread_arg;
 
-static uint32_t read_queries_from_file(char *filepath, query *queries);
+static uint32_t read_queries_from_file(const char *filepath, query *queries);
 static void *query_solver(void *argument);
+static void query_print_results_to_file(query *queries, uint32_t length, char *filepath);
+static query* init_query_struct(uint32_t size);
+static uint32_t compute_thread_query_indeces(uint32_t tot_queries, uint32_t max_threads, uint32_t *query_indeces);
+static void destroy_query_struct(query *q);
+
+#if !TEST
+static 
+#endif
 bool find_path_reachability(uint32_t source_id, uint32_t dest_id, Graph* graph, Bitmap *vst_nodes);
-void query_init(char *filepath, Graph *grafo);
 
 static query *queries = NULL;
-static Bitmap *query_results = NULL; 
 static Bitmap* visited_nodes_multi[MAX_THREADS_QUERY] = {NULL};
-static void *query_print_results_to_file(query *queries, uint32_t length, char *filepath);
-void print_query_results(char *filepath) {
-    query_print_results_to_file(queries, 20, filepath); 
 
+void query_print_results(char *filepath) {
+    query_print_results_to_file(queries, queries->length, filepath); 
 }
 
-static void *query_print_results_to_file(query *queries, uint32_t length, char *filepath) {
-    if(filepath == NULL)
-        filepath = "test/output/query_output.txt"; 
-
-    FILE *fout = fopen(filepath, "w");
-    if(fout == NULL) {
-        fprintf(stderr, "FAILED opening file %s at query_print_results_to_file", filepath);
-        exit(4);
-    }
-
-    for(int i = 0; i < length; i++) {
-        if(bitmap_test_bit(query_results, i))
-            fprintf(fout, "%d %d 1\n", queries[i].src, queries[i].dst); 
-        else
-            fprintf(fout, "%d %d 0\n", queries[i].src, queries[i].dst); 
-    }
-
-};
-
-static uint32_t compute_thread_query_indeces(uint32_t tot_queries, uint32_t max_threads, uint32_t *query_indeces) {
-
-   const uint32_t num_queries_per_thread = tot_queries / max_threads;
-   const uint32_t tot_running_threads = num_queries_per_thread == 0 ? 1 : max_threads;
-   uint32_t start_index = 0;
-
-   for(int i = 0; i < tot_running_threads; i++) {
-       query_indeces[i*2] = start_index;
-       if(i != MAX_THREADS_QUERY - 1)
-           query_indeces[i*2 + 1] = start_index + num_queries_per_thread;
-       else
-           query_indeces[i*2 + 1] = tot_queries; 
-
-       start_index = query_indeces[i*2 + 1];
-   }
-
-   return tot_running_threads;
+void query_cleanup(void) {
+    destroy_query_struct(queries);
 }
 
-void query_init(char *filepath, Graph *g) {
+void query_init(const char *filepath, Graph *g) {
 
    Graph *graph = g;
-   queries = malloc(MAX_QUERIES * sizeof(query));
-   if(queries == NULL){
-       fprintf(stderr, "FAILED malloc'ing queries at query_init\n");
-       exit(3);
-   }
-
-   query_results = bitmap_create(MAX_QUERIES); 
-   if(query_results == NULL){
-       fprintf(stderr, "FAILED bitmap_create at query_init\n");
-       exit(4);
-   }
+   queries = init_query_struct(MAX_QUERIES);
 
 #if DEBUG
    fprintf(stdout, "READING queries from '%s'...\n", filepath);
@@ -94,13 +62,11 @@ void query_init(char *filepath, Graph *g) {
 #endif
 
    uint32_t num_tot_queries = read_queries_from_file(filepath, queries);
+   queries->length = num_tot_queries;
 
 #if DEBUG
    clock_t end = clock();
    printf("READ %d queries. It took %fs\n\n", num_tot_queries, (double)(end - start) / CLOCKS_PER_SEC);
-#endif
-
-#if DEBUG
    fprintf(stdout, "STARTING SOLVING QUERIES ...\n"); 
    start = clock();
 #endif
@@ -138,7 +104,7 @@ void query_init(char *filepath, Graph *g) {
        };
    }
         
-   //waiting threads that are solving the queries
+   //waiting threads... 
    for(int i = 0; i < num_running_threads; i++) {
        pthread_join(thread_ids[i], NULL);
    }
@@ -146,12 +112,10 @@ void query_init(char *filepath, Graph *g) {
    for(int i = 0; i < num_running_threads; i++) {
        bitmap_destroy(visited_nodes_multi[i]);
    }
-    
-   bitmap_destroy(query_results);
 
 #if DEBUG
    end = clock();
-   fprintf(stdout, "SOLVING QUERIES took %fs\n", (double)(end - start) / CLOCKS_PER_SEC);
+   fprintf(stdout, "SOLVING %u QUERIES took %fs\n", queries->length, (double)(end - start) / CLOCKS_PER_SEC);
 #endif
 
 };
@@ -165,21 +129,20 @@ static void *query_solver(void *argument) {
     uint32_t id = arg->id; 
 
 #if DEBUG
-    fprintf(stdout, "THREAD %u start_index %u end_index %u graph %u visited_notes_multi %u\n", id, start_index, end_index, graph, visited_nodes_multi[id]);
+    fprintf(stdout, "THREAD %u start_index %u end_index %u graph %p visited_notes_multi %p\n", id, start_index, end_index, graph, visited_nodes_multi[id]);
 #endif
 
     for(uint32_t i = start_index; i < end_index; i++) {
         bitmap_clear_all(visited_nodes_multi[id]); 
-        if(find_path_reachability(queries[i].src, queries[i].dst, graph, visited_nodes_multi[id])) {
-            bitmap_set_bit(query_results, i);
+        if(find_path_reachability(queries->routes[i].src, queries->routes[i].dst, graph, visited_nodes_multi[id])) {
+            bitmap_set_bit(queries->res, i);
         }
     }
 
     pthread_exit(NULL);
-
 };
 
-static uint32_t read_queries_from_file(char *filepath, query *queries) {
+static uint32_t read_queries_from_file(const char *filepath, query *queries) {
 
 #if DEBUG
     fprintf(stdout, "> starting reading queries from file %s\n", filepath);
@@ -196,9 +159,9 @@ static uint32_t read_queries_from_file(char *filepath, query *queries) {
 
 
     while(fgets(buff, MAX_LENGTH_BUFFER, fp)){
-        if(sscanf(buff, "%d %d", &queries[next].src, &queries[next].dst) == 2){  
-#if 1 
-            fprintf(stdout, "%d %d\n", queries[next].src, queries[next].dst);
+        if(sscanf(buff, "%d %d", &queries->routes[next].src, &queries->routes[next].dst) == 2){  
+#if 0 
+            fprintf(stdout, "%d %d\n", queries->routes[next].src, queries->routes[next].dst);
 #endif
             next++;
         }
@@ -232,7 +195,7 @@ static
 #endif
 bool find_path_reachability(uint32_t source_id, uint32_t dest_id, Graph *graph, Bitmap *vst_nodes){
 
-    printf("source_id %u dest_id %u\n", source_id, dest_id);
+    //printf("source_id %u dest_id %u\n", source_id, dest_id);
 
     if(source_id == dest_id)
         return true;
@@ -276,4 +239,57 @@ bool find_path_reachability(uint32_t source_id, uint32_t dest_id, Graph *graph, 
 
     return false;
 
+}
+
+static query* init_query_struct(uint32_t size) {
+    query *q = malloc(sizeof(query));
+    q->routes = malloc(size * sizeof(route));
+    q->res = bitmap_create(size);
+    q->length = size;
+    return q;
+}
+
+static void destroy_query_struct(query *q) {
+    bitmap_destroy(q->res);
+    free(q->routes);
+    free(q);
+}
+
+static void query_print_results_to_file(query *queries, uint32_t length, char *filepath) {
+
+    if(filepath == NULL)
+        filepath = "test/output/query_output.txt"; 
+
+    FILE *fout = fopen(filepath, "w");
+    if(fout == NULL) {
+        fprintf(stderr, "FAILED opening file %s at query_print_results_to_file\n", filepath);
+        exit(4);
+    }
+
+    for(int i = 0; i < length; i++) {
+        if(bitmap_test_bit(queries->res, i))
+            fprintf(fout, "%d %d 1\n", queries->routes[i].src, queries->routes[i].dst); 
+        else
+            fprintf(fout, "%d %d 0\n", queries->routes[i].src, queries->routes[i].dst); 
+    }
+
+};
+
+static uint32_t compute_thread_query_indeces(uint32_t tot_queries, uint32_t max_threads, uint32_t *query_indeces) {
+
+   const uint32_t num_queries_per_thread = tot_queries / max_threads;
+   const uint32_t tot_running_threads = num_queries_per_thread == 0 ? 1 : max_threads;
+   uint32_t start_index = 0;
+
+   for(int i = 0; i < tot_running_threads; i++) {
+       query_indeces[i*2] = start_index;
+       if(i != MAX_THREADS_QUERY - 1)
+           query_indeces[i*2 + 1] = start_index + num_queries_per_thread;
+       else
+           query_indeces[i*2 + 1] = tot_queries; 
+
+       start_index = query_indeces[i*2 + 1];
+   }
+
+   return tot_running_threads;
 }

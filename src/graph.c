@@ -148,7 +148,7 @@ int find_root_nodes(Graph* p_graph, Bitmap* b_incoming_edge_nodes)
     return next;
 }
 
-Graph *graph_create(char *filepath, int num_intervals)
+Graph *graph_create(const char *filepath, int num_intervals)
 {
 #if DEBUG
     clock_t start = clock();

@@ -30,7 +30,7 @@ Node* node_create(uint32_t num_intervals, uint32_t node_id);
 //Free memory and destroy node
 void node_destroy(Node* node);
 
-Graph* graph_create(char *filepath, int num_intervals);
+Graph* graph_create(const char *filepath, int num_intervals);
 void graph_destroy(Graph *graph);
 /* Print a graph. If verbose is on, it will print for each node, besides the children ids, the labels 
  * If index_node is > 0, it prints the node with that id. 

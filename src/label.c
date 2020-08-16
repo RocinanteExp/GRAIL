@@ -136,6 +136,11 @@ static void *setting_intervals(void *thread_argument)
 
 void label_generate_random_labels(Graph* graph)
 {
+#if DEBUG
+    fprintf(stdout, "GENERATING LABELS...\n");
+    clock_t start = clock();
+#endif
+
     uint32_t idx = 0;
     pthread_t *tids = malloc(graph->num_intervals * sizeof(pthread_t));
     struct thread_argument *args = malloc(graph->num_intervals * sizeof(struct thread_argument));
@@ -166,6 +171,11 @@ void label_generate_random_labels(Graph* graph)
 
     free(args);
     free(tids);
+#if DEBUG
+    clock_t end = clock();
+    fprintf(stdout, "LABEL GENERATION took %fs\n", (double)(end - start) / CLOCKS_PER_SEC);
+#endif
+
 }
 
 Label label_init(uint32_t l,uint32_t r)
