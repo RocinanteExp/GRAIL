@@ -16,7 +16,6 @@ START_TEST (test_node_create)
     ck_assert_msg(n->intervals[1].right == UINT32_MAX,"n->intervals[1].right is not UINT32_MAX");
     ck_assert_msg(n->intervals[2].left == UINT32_MAX, "n->intervals[2].left is not UINT32_MAX");
     ck_assert_msg(n->intervals[2].right == UINT32_MAX, "n->intervals[2].right is not UINT32_MAX");
-    ck_assert(n->interval_bitmap != NULL);
 }
 END_TEST
 
