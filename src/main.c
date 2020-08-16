@@ -18,6 +18,7 @@ int main(int argc, char **argv) {
     label_generate_random_labels(graph);
     graph_print_to_stdout(graph, true, -1); 
     query_init("test/input/grafo20_25.que", graph);
+    print_query_results(NULL);
     graph_destroy(graph);
 #endif
 

@@ -23,57 +23,36 @@ typedef struct {
 
 static uint32_t read_queries_from_file(char *filepath, query *queries);
 static void *query_solver(void *argument);
-static void *query_to_file(void *filepath);
 bool find_path_reachability(uint32_t source_id, uint32_t dest_id, Graph* graph, Bitmap *vst_nodes);
 void query_init(char *filepath, Graph *grafo);
 
 static query *queries = NULL;
 static Bitmap *query_results = NULL; 
-static sem_t sem; 
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; 
-static bool *done_threads = NULL;
 static Bitmap* visited_nodes_multi[MAX_THREADS_QUERY] = {NULL};
+static void *query_print_results_to_file(query *queries, uint32_t length, char *filepath);
+void print_query_results(char *filepath) {
+    query_print_results_to_file(queries, 20, filepath); 
 
-/*
-// TODO write to filepath
-static void *query_to_file(void *path) {
-    uint32_t done = 0;
-    FILE *fout = fopen("test/input/grafo_risultati.txt", "w");
+}
 
-    while(done < MAX_THREADS_QUERY) {
-        sem_wait(&sem);
-        uint32_t start_index = -1;
-        uint32_t end_index = -1;
+static void *query_print_results_to_file(query *queries, uint32_t length, char *filepath) {
+    if(filepath == NULL)
+        filepath = "test/output/query_output.txt"; 
 
-        for(int i = 0; i < MAX_THREADS_QUERY; i++) {
-            pthread_mutex_lock(&mutex);
-            if(done_threads[i] == true) {
-                pthread_mutex_unlock(&mutex);
-                start_index = thread_query_indeces[i*2];
-                end_index = thread_query_indeces[i*2 + 1];
-                done_threads[i] = false;
-                break;
-            }
-            else
-                pthread_mutex_unlock(&mutex);
-        }
-
-#if DEBUG
-        fprintf(stdout, "printing start %d end %d\n", start_index, end_index);
-#endif
-        for(int i = start_index; i < end_index; i++) {
-            if(bitmap_test_bit(query_results, i))
-                fprintf(fout, "%d %d 1\n", queries[i*2], queries[i*2+1]); 
-            else
-                fprintf(fout, "%d %d 0\n", queries[i*2], queries[i*2+1]); 
-        }
-
-        done++;
+    FILE *fout = fopen(filepath, "w");
+    if(fout == NULL) {
+        fprintf(stderr, "FAILED opening file %s at query_print_results_to_file", filepath);
+        exit(4);
     }
 
-    return query_to_file;
+    for(int i = 0; i < length; i++) {
+        if(bitmap_test_bit(query_results, i))
+            fprintf(fout, "%d %d 1\n", queries[i].src, queries[i].dst); 
+        else
+            fprintf(fout, "%d %d 0\n", queries[i].src, queries[i].dst); 
+    }
+
 };
-*/
 
 static uint32_t compute_thread_query_indeces(uint32_t tot_queries, uint32_t max_threads, uint32_t *query_indeces) {
 
@@ -108,17 +87,6 @@ void query_init(char *filepath, Graph *g) {
        fprintf(stderr, "FAILED bitmap_create at query_init\n");
        exit(4);
    }
-
-   done_threads = malloc(MAX_THREADS_QUERY * sizeof(bool));
-   if(done_threads == NULL){
-       fprintf(stderr, "FAILED malloc of done_threads at query_init\n");
-       exit(3);
-   }
-
-   for(uint32_t i = 0; i < MAX_THREADS_QUERY; i++) {
-       done_threads[i] = false;
-   }
-
 
 #if DEBUG
    fprintf(stdout, "READING queries from '%s'...\n", filepath);
@@ -156,7 +124,6 @@ void query_init(char *filepath, Graph *g) {
    }
 
    thread_arg args[num_running_threads];
-   sem_init(&sem, 0, 0);
 
    for(int i = 0; i < num_running_threads; i++) {
        args[i].start = thread_query_indeces[i*2];
@@ -171,30 +138,15 @@ void query_init(char *filepath, Graph *g) {
        };
    }
         
-   pthread_t thread_printer_id;
-   //int err = pthread_create(&thread_printer_id, NULL, query_to_file, NULL); 
-   /*
-   int err = pthread_create(&thread_printer_id, NULL, NULL, NULL); 
-   if(err != 0) {
-       fprintf(stderr, "FAILED pthread_create for thread printer ath query_init\n");
-       exit(6);
-   };
-    */
    //waiting threads that are solving the queries
    for(int i = 0; i < num_running_threads; i++) {
        pthread_join(thread_ids[i], NULL);
    }
-   //waiting thread that is printing the solutions
-   //pthread_join(thread_printer_id, NULL);
 
    for(int i = 0; i < num_running_threads; i++) {
        bitmap_destroy(visited_nodes_multi[i]);
    }
-
-   sem_destroy(&sem);
     
-   //freeing stuff...
-   free(done_threads);
    bitmap_destroy(query_results);
 
 #if DEBUG
@@ -223,10 +175,6 @@ static void *query_solver(void *argument) {
         }
     }
 
-    pthread_mutex_lock(&mutex);
-    done_threads[id] = true;
-    pthread_mutex_unlock(&mutex);
-    sem_post(&sem);
     pthread_exit(NULL);
 
 };

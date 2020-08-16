@@ -12,5 +12,6 @@ bool query_is_reachable_multi(uint32_t source_id, uint32_t dest_id, Graph* graph
  *    query format: "src dst"
  */
 void query_init(char *filepath, Graph *graph);
+void print_query_results(char *filepath);
 
 #endif
