@@ -13,6 +13,10 @@ test_label: src/label.c src/bitmap.c src/graph.c src/labelling.c src/query.c tes
 	gcc test/label_test.c src/label.c src/bitmap.c src/graph.c src/labelling.c src/query.c -g -lcheck -lm -lrt -lsubunit -pthread -I $(IDIR) -o bin/test
 test_node: src/label.c src/bitmap.c src/graph.c src/labelling.c src/query.c test/labeling_and_query_test.c
 	gcc test/node_test.c src/label.c src/bitmap.c src/graph.c src/labelling.c src/query.c -lcheck -lm -lrt -lsubunit -pthread -I $(IDIR) -o bin/test
+test_bitmap: src/label.c src/bitmap.c src/graph.c src/labelling.c src/query.c test/labeling_and_query_test.c
+	gcc test/bitmap_test.c src/label.c src/bitmap.c src/graph.c src/labelling.c src/query.c -lcheck -lm -lrt -lsubunit -pthread -I $(IDIR) -o bin/test
+test_graph: src/label.c src/bitmap.c src/graph.c src/labelling.c src/query.c test/labeling_and_query_test.c
+	gcc test/graph_test.c src/label.c src/bitmap.c src/graph.c src/labelling.c src/query.c -lcheck -lm -lrt -lsubunit -pthread -I $(IDIR) -o bin/test
 clean: 
 	rm -f bin/main
 cleanWin: 
