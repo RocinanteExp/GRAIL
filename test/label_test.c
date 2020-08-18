@@ -2,7 +2,6 @@
 #include <check.h>
 #include <stdlib.h>
 #include <graph.h>
-#include <labelling.h>
 
 START_TEST (test_label_init)
 {
@@ -59,11 +58,11 @@ START_TEST (test_label_include)
 }
 END_TEST 
 
-START_TEST (test_ramdom_shuffle)
+START_TEST (test_random_shuffle)
 {
     uint32_t vec[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
     
-    ramdom_shuffle(vec, 10);
+    random_shuffle(vec, 10);
 
     bool is_all = true;
     bool found = false;
@@ -88,12 +87,13 @@ START_TEST (test_ramdom_shuffle)
 }
 END_TEST
 
-START_TEST (test_graph_randomize_labelling)
+START_TEST (test_label_generate_random_labels)
 {
     uint32_t left[] = {1, 6, 7, 1, 1, 1, 13, 11, 1, 11, 3, 7, 1, 11, 18, 13, 13, 18, 11, 7};
     uint32_t right[] = {5, 6, 9, 10, 12, 4, 14, 17, 2, 16, 3, 8, 1, 15, 19, 20, 13, 18, 11, 7};
     Graph* graph = graph_create("test/input/grafo20.gra", 2);
-    graph_randomize_labelling(graph);
+    label_generate_random_labels(graph);
+
     
     for(int i = 0; i < 20; ++i) {
         Node* n = graph->nodes[i];
@@ -111,7 +111,7 @@ Suite* label_suite(void)
     tc_core = tcase_create("Core");
     tcase_add_test(tc_core, test_label_init);
     tcase_add_test(tc_core, test_label_include);
-    tcase_add_test(tc_core, test_ramdom_shuffle);
+    tcase_add_test(tc_core, test_random_shuffle);
     tcase_add_test(tc_core, test_graph_randomize_labelling);
     suite_add_tcase(s, tc_core);
     return s;

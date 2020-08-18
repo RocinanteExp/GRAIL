@@ -34,4 +34,4 @@ Francesco:
 |label_print_to_file| Giovanni|
 |graph_randomize_labelling| Francesco |
 |graph_random_visit| Francesco |
-|ramdom_shuffle| Francesco |
+|random_shuffle| Francesco |
