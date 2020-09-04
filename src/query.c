@@ -258,7 +258,7 @@ static void destroy_query_struct(query *q) {
 static void query_print_results_to_file(query *queries, uint32_t length, char *filepath) {
 
     if(filepath == NULL)
-        filepath = "test/output/query_output.txt"; 
+        filepath = "../test/output/query_output.txt"; 
 
     FILE *fout = fopen(filepath, "w");
     if(fout == NULL) {

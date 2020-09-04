@@ -33,13 +33,13 @@ void random_shuffle(uint32_t* vec, uint32_t size)
     else
         n = size;
 
-    unsigned int si = pthread_self();
-    unsigned int sj = pthread_self();
+    //unsigned int si = pthread_self();
+    //unsigned int sj = pthread_self();
 
     for(step = 0; step < n; ++step)
     {
-        i = rand_r(&si) % size;
-        j = rand_r(&sj) % size;
+        i = rand_r(pthread_self()) % size;
+        j = rand_r(pthread_self()) % size;
         uint32_t tmp = vec[i];
         vec[i] = vec[j];
         vec[j] = tmp;

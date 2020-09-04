@@ -9,8 +9,8 @@
 
 int main(int argc, char **argv) {
 #if 1
-    const char *graph_path = "/media/sf_input/v500000e1000.gra";
-    const char *queue_path = "/media/sf_input/v500000e1000.que";
+    const char *graph_path = "../test/input/large/graph3.gra";
+    const char *queue_path = "../test/input/large/graph3.que";
 #else
     const char *graph_path = "test/input/grafo20.gra";
     const char *queue_path = "test/input/grafo20_25.que";
@@ -22,12 +22,14 @@ int main(int argc, char **argv) {
     graph_randomize_labelling_sequential(graph, 2);
     query_init("test/input/v500000e1000.que", graph);
 #else
-    Graph* graph = graph_create(graph_path, 2);
+    Graph* graph = graph_create(graph_path, 5);
     label_generate_random_labels(graph);
     //graph_print_to_stdout(graph, true, -1); 
-    query_init(queue_path, graph);
-    query_print_results(NULL);
+   // query_init(queue_path, graph);
+    //query_print_results(NULL);
+    label_print_to_file("out_labels.txt",graph);
     graph_destroy(graph);
+    
 #endif
 
 #if 0
