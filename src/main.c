@@ -25,9 +25,9 @@ int main(int argc, char **argv) {
     Graph* graph = graph_create(graph_path, 5);
     label_generate_random_labels(graph);
     //graph_print_to_stdout(graph, true, -1); 
-   // query_init(queue_path, graph);
-    //query_print_results(NULL);
-    label_print_to_file("out_labels.txt",graph);
+    query_init(queue_path, graph);
+    query_print_results(NULL);
+    //label_print_to_file("out_labels.txt",graph);
     graph_destroy(graph);
     
 #endif
