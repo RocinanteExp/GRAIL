@@ -17,5 +17,6 @@ bool find_path_reachability(uint32_t source_id, uint32_t dest_id, Graph *graph, 
 void query_init(const char *filepath, Graph *graph);
 void query_cleanup(void);
 void query_print_results(char *filepath);
+bool check_query(int index, int *src, int *dst);
 
 #endif

@@ -148,7 +148,7 @@ int find_root_nodes(Graph* p_graph, Bitmap* b_incoming_edge_nodes)
     return next;
 }
 
-Graph *graph_create(const char *filepath, int num_intervals)
+Graph *graph_create(const char *filepath, const int num_intervals)
 {
 #if DEBUG
     clock_t start = clock();
@@ -157,8 +157,7 @@ Graph *graph_create(const char *filepath, int num_intervals)
     pthread_spinlock_t s_lock;
     const uint16_t BUFF_SIZE = 8192;
     uint32_t curr_iteration = 0;
-    uint32_t num_nodes = -1;
-    Bitmap *b_incoming_edge_nodes = bitmap_create(num_nodes);
+    uint32_t num_nodes = 0;
 
     FILE *fin = fopen( filepath, "r");
     if(fin == NULL){
@@ -175,8 +174,12 @@ Graph *graph_create(const char *filepath, int num_intervals)
     // parsing the first line
     char curr_line[BUFF_SIZE];
     fgets(curr_line, BUFF_SIZE, fin);
-    sscanf(curr_line, "%d", &num_nodes);
+    sscanf(curr_line, "%u", &num_nodes);
+#if DEBUG
+    printf("Num of nodes %u\n", num_nodes);
+#endif
     p_graph->num_nodes = num_nodes;
+    Bitmap *b_incoming_edge_nodes = bitmap_create(num_nodes);
 
     p_graph->nodes = malloc(num_nodes * sizeof(Node*));
     if(p_graph->nodes == NULL)
@@ -428,43 +431,6 @@ bool graph_print_to_stream(bool to_stdout, char* graph_path_to, bool with_label,
 
     if(with_label)
         label_print_to_file(label_path_to, graph);
-
-    return true;
-};
-
-bool label_print_to_file(char *filename, Graph *graph)
-{
-    FILE *fout = fopen(filename, "w");
-    if(fout == NULL) {
-        fprintf(stderr, "fopen failed at label_print_to_file %s", filename);
-        return false;
-    }
-
-    const uint32_t tot_nodes = graph->num_nodes;
-    const uint32_t tot_intervals = graph->num_intervals;
-    for(uint32_t i = 0; i < tot_nodes; i++) {
-        Node* node = graph->nodes[i];
-
-        int err = fprintf(fout, "%u: ", node->id);
-        if(err < 0) {
-            fprintf(stderr, "failed label_print_out at graph_print_to_file: #%u\n", i);
-            return false;
-        }
-
-        for(uint32_t j = 0; j < tot_intervals; j++) {
-            err = fprintf(fout, "[%u, %u] ", node->intervals[j].left, node->intervals[j].right);
-            if(err < 0) {
-                fprintf(stderr, "failed label_print_out at graph_print_to_file: [...] with j %u\n", j);
-                return false;
-            }
-        }
-
-        err = fprintf(fout, "\n");
-        if(err < 0) {
-            fprintf(stderr, "failed label_print_out at graph_print_to_file: \\n\n");
-            return false;
-        }
-    }
 
     return true;
 };

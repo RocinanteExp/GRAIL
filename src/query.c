@@ -20,7 +20,6 @@ typedef struct {
     uint32_t length;
 } query;
 
-
 typedef struct {
     uint32_t start;
     uint32_t end;
@@ -49,6 +48,14 @@ void query_print_results(char *filepath) {
 
 void query_cleanup(void) {
     destroy_query_struct(queries);
+}
+
+bool check_query(int index, int *src, int *dst) {
+    *src = queries->routes[index].src;
+    *dst = queries->routes[index].dst;
+    if(bitmap_test_bit(queries->res, index))
+        return true;
+    return false;
 }
 
 void query_init(const char *filepath, Graph *g) {
@@ -175,6 +182,7 @@ static uint32_t read_queries_from_file(const char *filepath, query *queries) {
     fprintf(stdout, "> Read %ld queries.\n> Exiting read_queries_from_file\n", next);
 #endif
 
+    fclose(fp);
     return next;
 }
 

@@ -33,13 +33,19 @@ void random_shuffle(uint32_t* vec, uint32_t size)
     else
         n = size;
 
-    //unsigned int si = pthread_self();
-    //unsigned int sj = pthread_self();
+    //srand(time(NULL));
+    unsigned int si = rand();  
+    unsigned int sj = rand();
+    //printf("sj %u si %u", si, sj);
 
     for(step = 0; step < n; ++step)
     {
-        i = rand_r(pthread_self()) % size;
-        j = rand_r(pthread_self()) % size;
+        i = rand_r(&si) % size;
+        j = rand_r(&sj) % size;
+        //i = rand() % size;
+        //j = rand() % size;
+        //i = rand_r(pthread_self()) % size;
+        //j = rand_r(pthread_self()) % size;
         uint32_t tmp = vec[i];
         vec[i] = vec[j];
         vec[j] = tmp;
@@ -52,6 +58,7 @@ static
 void graph_random_visit(Graph* graph, Bitmap* visited_nodes, uint32_t node_id, uint32_t idx, uint32_t* rank)
 {
     int j = 0;
+    unsigned int state = rand(); 
     uint32_t num_childrens = 0;
     uint32_t rc = UINT32_MAX;
 
@@ -67,13 +74,14 @@ void graph_random_visit(Graph* graph, Bitmap* visited_nodes, uint32_t node_id, u
 #if TEST
         j = 0;
 #else
-        j = rand_r(pthread_self())%node->num_children;
+        //j = rand()%node->num_children;
+        j = rand_r(&state)%node->num_children;
 #endif
 
     while(num_childrens < node->num_children)
     {
         num_childrens++;
-        graph_random_visit(graph,visited_nodes,node->children[j],idx,rank);
+        graph_random_visit(graph, visited_nodes, node->children[j], idx, rank);
         j = (j+1)%node->num_children;
     }
     
@@ -93,7 +101,7 @@ void graph_random_visit(Graph* graph, Bitmap* visited_nodes, uint32_t node_id, u
 
     node->intervals[idx].left = MIN(*rank,rc);
     node->intervals[idx].right = *rank;
-    *rank=*rank+1;
+    *rank = *rank+1;
 }
 
 // thread fuction fo setting intervals of the labels of the given index
@@ -125,6 +133,7 @@ static void *setting_intervals(void *thread_argument)
 #if !TEST
     random_shuffle(roots, graph->num_root_nodes);
 #endif
+
     for(i = 0; i < graph->num_root_nodes; i++)
         graph_random_visit(graph, visited_nodes, roots[i], idx, &rank);
 
@@ -141,9 +150,14 @@ void label_generate_random_labels(Graph* graph)
     clock_t start = clock();
 #endif
 
+    srand(time(NULL));
     uint32_t idx = 0;
     pthread_t *tids = malloc(graph->num_intervals * sizeof(pthread_t));
     struct thread_argument *args = malloc(graph->num_intervals * sizeof(struct thread_argument));
+    if(args == NULL) {
+        fprintf(stderr, "malloc of args failed at label_generate_random_labels\n");
+        exit(-2);
+    }
     
     for(idx = 0; idx < graph->num_intervals; idx++)
     {
@@ -154,14 +168,14 @@ void label_generate_random_labels(Graph* graph)
         int err = pthread_create(&tids[idx], NULL, setting_intervals, (void*)&args[idx]);
         if(err != 0)
         {
-            fprintf(stderr, "ERROR: pthread_create %d", idx);
+            fprintf(stderr, "ERROR: pthread_create %d at label_generate_random_labels", idx);
             exit(-2);
         }
     }
 
     for(idx = 0; idx < graph->num_intervals; idx++)
     {
-       int err = pthread_join(tids[idx], NULL);
+        int err = pthread_join(tids[idx], NULL);
         if(err != 0)
         {
             fprintf(stderr, "FAILED pthread_join %d at label_generate_random_labels", idx);
@@ -171,12 +185,51 @@ void label_generate_random_labels(Graph* graph)
 
     free(args);
     free(tids);
+
 #if DEBUG
     clock_t end = clock();
     fprintf(stdout, "LABEL GENERATION took %fs\n", (double)(end - start) / CLOCKS_PER_SEC);
 #endif
 
 }
+
+bool label_print_to_file(char *filename, Graph *graph)
+{
+    FILE *fout = fopen(filename, "w");
+    if(fout == NULL) {
+        fprintf(stderr, "fopen failed at label_print_to_file %s", filename);
+        return false;
+    }
+
+    const uint32_t tot_nodes = graph->num_nodes;
+    const uint32_t tot_intervals = graph->num_intervals;
+    for(uint32_t i = 0; i < tot_nodes; i++) {
+        Node* node = graph->nodes[i];
+
+        int err = fprintf(fout, "%u: ", node->id);
+        if(err < 0) {
+            fprintf(stderr, "failed label_print_out at graph_print_to_file: #%u\n", i);
+            return false;
+        }
+
+        for(uint32_t j = 0; j < tot_intervals; j++) {
+            err = fprintf(fout, "[%u, %u] ", node->intervals[j].left, node->intervals[j].right);
+            if(err < 0) {
+                fprintf(stderr, "failed label_print_out at graph_print_to_file: [...] with j %u\n", j);
+                return false;
+            }
+        }
+
+        err = fprintf(fout, "\n");
+        if(err < 0) {
+            fprintf(stderr, "failed label_print_out at graph_print_to_file: \\n\n");
+            return false;
+        }
+    }
+
+    fclose(fout);
+    return true;
+};
 
 Label label_init(uint32_t l,uint32_t r)
 {
