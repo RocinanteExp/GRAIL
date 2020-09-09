@@ -36,7 +36,7 @@ int main(void)
     Suite* s;
     SRunner *sr;
     Graph *graph = graph_create("test/input/grafo20.gra", 2);
-    graph_print(graph, false, -1);
+    graph_print_to_stdout(graph, false, ALL_NODES);
     s=graph_suite();
     sr=srunner_create(s);
     srunner_run_all(sr,CK_NORMAL);

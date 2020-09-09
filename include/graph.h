@@ -31,5 +31,5 @@ void graph_print_to_stdout(Graph *graph, bool verbose, uint32_t index_node);
 
 // Print a graph to filepath with option "w"
 bool graph_print_to_stream(char *graph_print_to_path, bool also_label, char *label_print_to_path, Graph *graph); 
-
+Node* node_create_multiple(uint32_t num_intervals, const uint32_t* node_ids, uint32_t num_nodes);
 #endif

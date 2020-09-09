@@ -45,7 +45,6 @@ static
 void randomized_visit(Graph* graph, Bitmap* visited_nodes, uint32_t node_id, uint32_t idx, uint32_t* rank)
 {
     int j = 0;
-    unsigned int state = rand(); 
     uint32_t num_childrens = 0;
     uint32_t rc = UINT32_MAX;
 
@@ -61,7 +60,8 @@ void randomized_visit(Graph* graph, Bitmap* visited_nodes, uint32_t node_id, uin
 #if TEST
         j = 0;
 #else
-        j = rand_r(&state)%node->num_children;
+    unsigned int state = rand(); 
+    j = rand_r(&state)%node->num_children;
 #endif
 
     while(num_childrens < node->num_children)

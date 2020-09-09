@@ -9,6 +9,7 @@
 
 static void* thread_entry_point(void *thread_argument);
 static void node_add_children(Node *node, const char *str);
+static void node_print_to_stdout(Node* node, bool verbose);
 
 struct thread_arg {
     FILE *fin;
@@ -23,7 +24,7 @@ struct thread_arg {
 // save the starting node of each multi node allocated by node_create_multiple 
 static Bitmap *base_multi_nodes = NULL;
 
-Node* node_create_multiple(uint32_t num_intervals, uint32_t* node_ids, uint32_t num_nodes)
+Node* node_create_multiple(uint32_t num_intervals, const uint32_t* node_ids, uint32_t num_nodes)
 {
     Node* base_node = malloc(num_nodes * sizeof(Node));
     if (base_node == NULL) {
@@ -359,7 +360,7 @@ void graph_print_to_stdout(Graph* graph, bool verbose, uint32_t index_node)
 
 }
 
-void node_print_to_stdout(Node* node, bool verbose){
+static void node_print_to_stdout(Node* node, bool verbose){
 
     fprintf(stdout, "%d: ", node->id);
     for(int i = 0; i < node->num_children; i++) {

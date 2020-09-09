@@ -112,7 +112,7 @@ Suite* label_suite(void)
     tcase_add_test(tc_core, test_label_init);
     tcase_add_test(tc_core, test_label_include);
     tcase_add_test(tc_core, test_vec_random_shuffle);
-    tcase_add_test(tc_core, test_graph_randomize_labelling);
+    tcase_add_test(tc_core, test_label_generate_random_labels);
     suite_add_tcase(s, tc_core);
     return s;
 }
