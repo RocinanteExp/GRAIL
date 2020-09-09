@@ -20,9 +20,8 @@ struct thread_arg {
     uint32_t tot_nodes;
 };
 
-// save the starting node of each multi node 
+// save the starting node of each multi node allocated by node_create_multiple 
 static Bitmap *base_multi_nodes = NULL;
-static const uint32_t max_nodes_per_thread = 100000;
 
 Node* node_create_multiple(uint32_t num_intervals, uint32_t* node_ids, uint32_t num_nodes)
 {
@@ -104,7 +103,7 @@ static void node_add_children(Node* node, const char* str)
             break;
         }
         else {
-            fprintf(stdout, "UNKNOWN CHARACTER %d\n", str[i]);
+            fprintf(stdout, "Read an UNKNOWN CHARACTER %d\n", str[i]);
             fprintf(stdout, "Exiting...");
             exit(3);
         }
@@ -120,7 +119,7 @@ static void node_add_children(Node* node, const char* str)
     node->num_children = next;
 }
 
-int find_root_nodes(Graph* p_graph, Bitmap* b_incoming_edge_nodes)
+int32_t find_root_nodes(Graph* p_graph, Bitmap* b_incoming_edge_nodes)
 {
     uint32_t next = 0;
     uint32_t magic_number = MAGIC_NUMBER;
@@ -177,13 +176,14 @@ Graph *graph_create(const char *filepath, const int num_intervals)
     Bitmap *b_incoming_edge_nodes = bitmap_create(num_nodes);
 
     p_graph->nodes = malloc(num_nodes * sizeof(Node*));
-    if(p_graph->nodes == NULL)
-    {
+    if(p_graph->nodes == NULL){
         free(p_graph);
         fprintf(stderr, "FAILED malloc p_graph->nodes at graph_create\n");
         return NULL;
     }
 
+    if(base_multi_nodes != NULL)
+        bitmap_destroy(base_multi_nodes); 
     base_multi_nodes = bitmap_create(num_nodes); 
 
     int err = pthread_spin_init(&s_lock, 0);
@@ -328,8 +328,8 @@ void graph_destroy(Graph *graph)
         return;
 
     node_destroy_multiple(graph);
-    // not great when we call multiple times graph_create before graph_destroy
     bitmap_destroy(base_multi_nodes);
+    base_multi_nodes = NULL;
     free(graph->root_nodes);
     free(graph->nodes);
     free(graph);

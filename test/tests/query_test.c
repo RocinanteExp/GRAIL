@@ -4,7 +4,7 @@
 #include <stdlib.h>
 START_TEST (test_query_is_reachable)
 {
-    Graph* graph=graph_create("../test/input/grafo20.gra",5);
+    Graph* graph=graph_create("test/input/grafo20.gra",5);
     bool res;
     Bitmap* vn=bitmap_create(20);
     res=query_is_reachable_multi(0,10,graph,vn);
@@ -22,7 +22,7 @@ START_TEST (test_query_is_reachable)
 END_TEST
 START_TEST (test_query_init)
 {
-    Graph* graph=graph_create("../test/input/grafo20.gra",5);
+    Graph* graph=graph_create("test/input/grafo20.gra",5);
     FILE* in;
     char buff[1000];
     int src,dest,res=0;
@@ -48,7 +48,7 @@ int main(void)
     int n_fail;
     Suite* s;
     SRunner *sr;
-    Graph *graph = graph_create("../test/input/grafo20.gra", 2);
+    Graph *graph = graph_create("test/input/grafo20.gra", 2);
     graph_print(graph, false, -1);
     s=query_suite();
     sr=srunner_create(s);

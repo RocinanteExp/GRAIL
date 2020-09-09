@@ -5,21 +5,21 @@
 static int SIZE_CHUNK = (sizeof(int) * 8);
 START_TEST (test_bitmap_create)
 {
-    Bitmap* bitmap=NULL;
+    Bitmap* bitmap = NULL;
     bitmap = bitmap_create(24);
-    ck_assert(bitmap!=NULL);
-    ck_assert(bitmap->bitset!=NULL);
-    ck_assert(bitmap->length==1 ||bitmap->length==2);
-    ck_assert(bitmap->num_bits==24);
+    ck_assert(bitmap != NULL);
+    ck_assert(bitmap->bitset != NULL);
+    ck_assert(bitmap->length == 1 || bitmap->length == 2);
+    ck_assert(bitmap->num_bits == 24);
 
 }
 END_TEST
 
 START_TEST (test_bitmap_set_bit)
 {
-    Bitmap* bitmap=NULL;
+    Bitmap* bitmap = NULL;
     bitmap = bitmap_create(32);
-    int pos=0;
+    int pos = 0;
     bitmap_set_bit(bitmap,0);
     ck_assert( (bitmap->bitset[pos / SIZE_CHUNK] & 1 << (pos % SIZE_CHUNK))== (1 << (pos % SIZE_CHUNK)));
     pos=25;

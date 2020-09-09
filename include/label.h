@@ -16,6 +16,8 @@ typedef struct label_s {
 void label_generate_random_labels(Graph* graph);
 // print the labels to filepath with option "w"
 bool label_print_to_file(char *filename, Graph *graph); 
+// create a new label
+Label label_init(uint32_t l, uint32_t r);
 // check whether l1 is included in l2
 bool label_include(Label l1, Label l2); 
 
