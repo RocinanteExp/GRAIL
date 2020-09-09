@@ -1,4 +1,4 @@
-#include <menu.h>
+#include "menu.h"
 #include "graph.h"
 #include "label.h"
 #include "query.h"
@@ -44,7 +44,7 @@ void menu(int argc, char **argv) {
     Graph* graph = graph_create(graph_path, num_intervals);
     if(graph == NULL) {
         fprintf(stderr, "something went wrong :\\\n");
-        exit(3);
+        exit(-1);
     }
     label_generate_random_labels(graph);
     if(do_print_labels)
@@ -66,7 +66,6 @@ void menu(int argc, char **argv) {
             }
             bool res = check_query(query_number, &src, &dst);
             printf("    src %d dst %d is %s\n", src, dst, res == true ? "reachable" : "unreachable");
-
         }
     }
 

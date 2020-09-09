@@ -18,7 +18,7 @@ typedef struct {
     route *routes;
     Bitmap *res;
     uint32_t length;
-} query;
+} query_set;
 
 typedef struct {
     uint32_t start;
@@ -27,20 +27,20 @@ typedef struct {
     uint32_t id;
 } thread_arg;
 
-static uint32_t read_queries_from_file(const char *filepath, query *queries);
-static void *query_solver(void *argument);
-static void query_print_results_to_file(query *queries, uint32_t length, char *filepath);
-static query* init_query_struct(uint32_t size);
+static uint32_t read_queries_from_file(const char *filepath, query_set *queries);
 static uint32_t compute_thread_query_indeces(uint32_t tot_queries, uint32_t max_threads, uint32_t *query_indeces);
-static void destroy_query_struct(query *q);
+static void *query_solver(void *argument);
+static query_set* init_query_struct(uint32_t size);
+static void destroy_query_struct(query_set *q);
+static void query_print_results_to_file(query_set *queries, uint32_t length, char *filepath);
 
 #if !TEST
 static 
 #endif
 bool find_path_reachability(uint32_t source_id, uint32_t dest_id, Graph* graph, Bitmap *vst_nodes);
 
-static query *queries = NULL;
-static Bitmap* visited_nodes_multi[MAX_THREADS_QUERY] = {NULL};
+static query_set *queries = NULL;
+static Bitmap *visited_nodes_multi[MAX_THREADS_QUERY] = {NULL};
 
 void query_print_results(char *filepath) {
     query_print_results_to_file(queries, queries->length, filepath); 
@@ -73,13 +73,14 @@ void query_init(const char *filepath, Graph *g) {
 
 #if DEBUG
    clock_t end = clock();
-   printf("READ %d queries. It took %fs\n\n", num_tot_queries, (double)(end - start) / CLOCKS_PER_SEC);
-   fprintf(stdout, "STARTING SOLVING QUERIES ...\n"); 
+   fprintf(stdout, "READ %d queries. It took %fs\n\n", num_tot_queries, (double)(end - start) / CLOCKS_PER_SEC);
+   fprintf(stdout, "SOLVING QUERIES ...\n"); 
    start = clock();
 #endif
 
    pthread_t thread_ids[MAX_THREADS_QUERY];
    uint32_t thread_query_indeces[MAX_THREADS_QUERY * 2];
+   // num_running_threads is equal to MAX_THREADS_QUREY in most cases
    const uint32_t num_running_threads = compute_thread_query_indeces(num_tot_queries, MAX_THREADS_QUERY, thread_query_indeces);
 
 #if DEBUG
@@ -91,8 +92,8 @@ void query_init(const char *filepath, Graph *g) {
    for(uint32_t i = 0; i < num_running_threads; i++) {
        visited_nodes_multi[i] = bitmap_create(graph->num_nodes);
        if(visited_nodes_multi[i] == NULL) {
-           fprintf(stderr, "FAILED bitmap_create at query_init for visited_nodes_multi\n");
-           exit(3);
+           fprintf(stderr, "FAILED bitmap_create for visited_nodes_multi at query_init\n");
+           exit(-4);
        }
    }
 
@@ -107,7 +108,7 @@ void query_init(const char *filepath, Graph *g) {
        int err = pthread_create(&thread_ids[i], NULL, query_solver, &args[i]); 
        if(err != 0) {
            fprintf(stderr, "FAILED pthread_create for thread %d at query_init\n", i);  
-           exit(6);
+           exit(-3);
        };
    }
         
@@ -149,16 +150,16 @@ static void *query_solver(void *argument) {
     pthread_exit(NULL);
 };
 
-static uint32_t read_queries_from_file(const char *filepath, query *queries) {
+static uint32_t read_queries_from_file(const char *filepath, query_set *queries) {
 
 #if DEBUG
-    fprintf(stdout, "> starting reading queries from file %s\n", filepath);
+    fprintf(stdout, "> Starting reading queries from file %s\n", filepath);
 #endif
 
     FILE *fp = fopen(filepath, "r");
     if(fp == NULL) {
         fprintf(stderr, "FAILED fopen at read_queries_from_file");
-        exit(5);
+        exit(-4);
     }
 
     char buff[MAX_LENGTH_BUFFER];
@@ -203,8 +204,6 @@ static
 #endif
 bool find_path_reachability(uint32_t source_id, uint32_t dest_id, Graph *graph, Bitmap *vst_nodes){
 
-    //printf("source_id %u dest_id %u\n", source_id, dest_id);
-
     if(source_id == dest_id)
         return true;
 
@@ -212,14 +211,14 @@ bool find_path_reachability(uint32_t source_id, uint32_t dest_id, Graph *graph, 
 
     Node *src_node = graph->nodes[source_id];
     if(src_node == NULL) {
-        fprintf(stdout, "NULLO %d\n", source_id);
-        exit(1);
+        fprintf(stdout, "Node src %u was not found in this graph at find_path_reachability\n", source_id);
+        exit(-5);
     }
 
     Node *dst_node = graph->nodes[dest_id];
     if(dst_node == NULL) {
-        fprintf(stdout, "NULLO %d\n", dest_id);
-        exit(1);
+        fprintf(stdout, "Node dst %u was not found in this graph at find_path_reachability\n", dest_id);
+        exit(-5);
     }
     uint32_t num_children_src = src_node->num_children;
 
@@ -249,29 +248,29 @@ bool find_path_reachability(uint32_t source_id, uint32_t dest_id, Graph *graph, 
 
 }
 
-static query* init_query_struct(uint32_t size) {
-    query *q = malloc(sizeof(query));
+static query_set* init_query_struct(uint32_t size) {
+    query_set *q = malloc(sizeof(query_set));
     q->routes = malloc(size * sizeof(route));
     q->res = bitmap_create(size);
     q->length = size;
     return q;
 }
 
-static void destroy_query_struct(query *q) {
+static void destroy_query_struct(query_set *q) {
     bitmap_destroy(q->res);
     free(q->routes);
     free(q);
 }
 
-static void query_print_results_to_file(query *queries, uint32_t length, char *filepath) {
+static void query_print_results_to_file(query_set *queries, uint32_t length, char *filepath) {
 
     if(filepath == NULL)
-        filepath = "../test/output/query_output.txt"; 
+        filepath = "test/output/query_output.txt"; 
 
     FILE *fout = fopen(filepath, "w");
     if(fout == NULL) {
-        fprintf(stderr, "FAILED opening file %s at query_print_results_to_file\n", filepath);
-        exit(4);
+        fprintf(stderr, "FAILED fopen of %s in write mode at query_print_results_to_file\n", filepath);
+        exit(-3);
     }
 
     for(int i = 0; i < length; i++) {

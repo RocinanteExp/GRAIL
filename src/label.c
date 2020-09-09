@@ -6,12 +6,7 @@
 #include <time.h>
 #include "label.h"
 #include "graph.h"
-
-// MACRO for MIN
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
-
-uint32_t r;
-uint32_t global_rank = 0;
 
 struct thread_argument {
     Graph* graph;
@@ -19,33 +14,25 @@ struct thread_argument {
     uint32_t rank;
 };
 
-static void* setting_intervals(void* thread_argument);
+static void* thread_generate_interval(void* thread_argument);
 
 #if !TEST
 static 
 #endif
-void random_shuffle(uint32_t* vec, uint32_t size)
+void vec_random_shuffle(uint32_t *vec, uint32_t size)
 {
-    uint32_t n = 0, j = 0, i = 0, step = 0;
+    uint32_t n = size, j = 0, i = 0, step = 0;
 
     if(size > 1000000)
         n = 1000000;
-    else
-        n = size;
 
-    //srand(time(NULL));
     unsigned int si = rand();  
     unsigned int sj = rand();
-    //printf("sj %u si %u", si, sj);
 
     for(step = 0; step < n; ++step)
     {
         i = rand_r(&si) % size;
         j = rand_r(&sj) % size;
-        //i = rand() % size;
-        //j = rand() % size;
-        //i = rand_r(pthread_self()) % size;
-        //j = rand_r(pthread_self()) % size;
         uint32_t tmp = vec[i];
         vec[i] = vec[j];
         vec[j] = tmp;
@@ -55,7 +42,7 @@ void random_shuffle(uint32_t* vec, uint32_t size)
 #if !TEST
 static 
 #endif
-void graph_random_visit(Graph* graph, Bitmap* visited_nodes, uint32_t node_id, uint32_t idx, uint32_t* rank)
+void randomized_visit(Graph* graph, Bitmap* visited_nodes, uint32_t node_id, uint32_t idx, uint32_t* rank)
 {
     int j = 0;
     unsigned int state = rand(); 
@@ -74,14 +61,13 @@ void graph_random_visit(Graph* graph, Bitmap* visited_nodes, uint32_t node_id, u
 #if TEST
         j = 0;
 #else
-        //j = rand()%node->num_children;
         j = rand_r(&state)%node->num_children;
 #endif
 
     while(num_childrens < node->num_children)
     {
         num_childrens++;
-        graph_random_visit(graph, visited_nodes, node->children[j], idx, rank);
+        randomized_visit(graph, visited_nodes, node->children[j], idx, rank);
         j = (j+1)%node->num_children;
     }
     
@@ -105,37 +91,35 @@ void graph_random_visit(Graph* graph, Bitmap* visited_nodes, uint32_t node_id, u
 }
 
 // thread fuction fo setting intervals of the labels of the given index
-static void *setting_intervals(void *thread_argument)
+static void *thread_generate_interval(void *thread_argument)
 {
     struct thread_argument *arg = (struct thread_argument *) thread_argument;
-    Graph* graph = arg->graph;
+    Graph *graph = arg->graph;
     uint32_t idx = arg->idx;
     uint32_t rank = arg->rank;
     int i = 0;
 
-    uint32_t* roots = malloc(graph->num_root_nodes*sizeof(uint32_t));
+    uint32_t *roots = malloc(graph->num_root_nodes*sizeof(uint32_t));
     if(roots == NULL)
     {
-        fprintf(stderr, "ERROR IN ALLOCATING roots IN: setting_intervals\n");
-        pthread_exit((void*)-1);
+        fprintf(stderr, "FAILED malloc roots at thread_generate_interval\n");
+        exit(-1);
     } 
+    for(i = 0; i < graph->num_root_nodes; i++)
+        roots[i] = graph->root_nodes[i];
+#if !TEST
+    vec_random_shuffle(roots, graph->num_root_nodes);
+#endif
 
     Bitmap* visited_nodes = bitmap_create(graph->num_nodes);
     if(visited_nodes == NULL)
     {
-        fprintf(stderr, "ERROR IN ALLOCATING BITMAP IN: setting_intervals\n");
-        pthread_exit((void*)-1);
+        fprintf(stderr, "FAILED bitmap_create of visited_notes at thread_generate_interval\n");
+        exit(-1);
     }
 
-    //copy root array
-    for(i=0;i<graph->num_root_nodes;i++)
-        roots[i] = graph->root_nodes[i];
-#if !TEST
-    random_shuffle(roots, graph->num_root_nodes);
-#endif
-
     for(i = 0; i < graph->num_root_nodes; i++)
-        graph_random_visit(graph, visited_nodes, roots[i], idx, &rank);
+        randomized_visit(graph, visited_nodes, roots[i], idx, &rank);
 
     bitmap_destroy(visited_nodes);
     free(roots);
@@ -155,20 +139,20 @@ void label_generate_random_labels(Graph* graph)
     pthread_t *tids = malloc(graph->num_intervals * sizeof(pthread_t));
     struct thread_argument *args = malloc(graph->num_intervals * sizeof(struct thread_argument));
     if(args == NULL) {
-        fprintf(stderr, "malloc of args failed at label_generate_random_labels\n");
+        fprintf(stderr, "FAILED malloc of thread args at label_generate_random_labels\n");
         exit(-2);
     }
     
+    // one thread generate a single interval
     for(idx = 0; idx < graph->num_intervals; idx++)
     {
-        // inizialize thread arguments
         args[idx].graph = graph;
         args[idx].idx = idx;
         args[idx].rank = 1; 
-        int err = pthread_create(&tids[idx], NULL, setting_intervals, (void*)&args[idx]);
+        int err = pthread_create(&tids[idx], NULL, thread_generate_interval, (void*)&args[idx]);
         if(err != 0)
         {
-            fprintf(stderr, "ERROR: pthread_create %d at label_generate_random_labels", idx);
+            fprintf(stderr, "FAILED pthread_create %d at label_generate_random_labels", idx);
             exit(-2);
         }
     }
@@ -215,14 +199,14 @@ bool label_print_to_file(char *filename, Graph *graph)
         for(uint32_t j = 0; j < tot_intervals; j++) {
             err = fprintf(fout, "[%u, %u] ", node->intervals[j].left, node->intervals[j].right);
             if(err < 0) {
-                fprintf(stderr, "failed label_print_out at graph_print_to_file: [...] with j %u\n", j);
+                fprintf(stderr, "FAILED label_print_out at graph_print_to_file: [...] with j %u\n", j);
                 return false;
             }
         }
 
         err = fprintf(fout, "\n");
         if(err < 0) {
-            fprintf(stderr, "failed label_print_out at graph_print_to_file: \\n\n");
+            fprintf(stderr, "FAILED label_print_out at graph_print_to_file: \\n\n");
             return false;
         }
     }
@@ -230,14 +214,6 @@ bool label_print_to_file(char *filename, Graph *graph)
     fclose(fout);
     return true;
 };
-
-Label label_init(uint32_t l,uint32_t r)
-{
-    Label x;
-    x.left = l;
-    x.right = r;
-    return x;
-}
 
 bool label_include(Label l1,Label l2)
 {

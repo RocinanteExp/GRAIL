@@ -58,11 +58,11 @@ START_TEST (test_label_include)
 }
 END_TEST 
 
-START_TEST (test_random_shuffle)
+START_TEST (test_vec_random_shuffle)
 {
     uint32_t vec[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
     
-    random_shuffle(vec, 10);
+    vec_random_shuffle(vec, 10);
 
     bool is_all = true;
     bool found = false;
@@ -111,7 +111,7 @@ Suite* label_suite(void)
     tc_core = tcase_create("Core");
     tcase_add_test(tc_core, test_label_init);
     tcase_add_test(tc_core, test_label_include);
-    tcase_add_test(tc_core, test_random_shuffle);
+    tcase_add_test(tc_core, test_vec_random_shuffle);
     tcase_add_test(tc_core, test_graph_randomize_labelling);
     suite_add_tcase(s, tc_core);
     return s;
