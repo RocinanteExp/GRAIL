@@ -15,6 +15,8 @@ test_node: $(TEST_SOURCE_FILES) test/tests/node_test.c
 	gcc test/tests/node_test.c $(TEST_SOURCE_FILES) -g -lcheck -lm -lrt -lsubunit -pthread -I $(IDIR) -o bin/test
 test_graph: $(TEST_SOURCE_FILES) test/tests/graph_test.c
 	gcc test/tests/graph_test.c $(TEST_SOURCE_FILES) -g -lcheck -lm -lrt -lsubunit -pthread -I $(IDIR) -o bin/test
+test_graph: $(TEST_SOURCE_FILES) test/tests/bitmap_test.c
+	gcc test/tests/bitmap_test.c $(TEST_SOURCE_FILES) -g -lcheck -lm -lrt -lsubunit -pthread -I $(IDIR) -o bin/test
 clean: 
 	rm -f bin/*
 cleanWin: 
