@@ -46,6 +46,15 @@ void menu(int argc, char **argv) {
         fprintf(stderr, "something went wrong :\\\n");
         exit(-1);
     }
+#if DEBUG
+    char copy_path[100];
+    int n = sprintf(copy_path, "test/output/graph.copy");
+    if(n < 0) {
+        fprintf(stderr, "FAILED sprintf at menu.c\n");
+    }
+    else
+        graph_print_to_stream(copy_path, false, NULL, graph); 
+#endif
     label_generate_random_labels(graph);
     if(do_print_labels)
         label_print_to_file("test/output/labels_out.txt", graph);

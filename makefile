@@ -3,7 +3,7 @@
 CC=gcc
 IDIR=./include
 SDIR=./src
-CFLAGS=-pthread -Wall -g -O0
+CFLAGS=-pthread -Wall -g -O3
 TEST_SOURCE_FILES=src/label.c src/bitmap.c src/graph.c src/query.c
 main: $(SDIR)/*.c $(IDIR)/*.h
 	$(CC) $(SDIR)/*.c $(CFLAGS) -I $(IDIR) -o bin/main
@@ -15,7 +15,7 @@ test_node: $(TEST_SOURCE_FILES) test/tests/node_test.c
 	gcc test/tests/node_test.c $(TEST_SOURCE_FILES) -g -lcheck -lm -lrt -lsubunit -pthread -I $(IDIR) -o bin/test
 test_graph: $(TEST_SOURCE_FILES) test/tests/graph_test.c
 	gcc test/tests/graph_test.c $(TEST_SOURCE_FILES) -g -lcheck -lm -lrt -lsubunit -pthread -I $(IDIR) -o bin/test
-test_graph: $(TEST_SOURCE_FILES) test/tests/bitmap_test.c
+test_bitmap: $(TEST_SOURCE_FILES) test/tests/bitmap_test.c
 	gcc test/tests/bitmap_test.c $(TEST_SOURCE_FILES) -g -lcheck -lm -lrt -lsubunit -pthread -I $(IDIR) -o bin/test
 clean: 
 	rm -f bin/*

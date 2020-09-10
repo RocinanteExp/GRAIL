@@ -168,7 +168,7 @@ static uint32_t find_max_queries(const char *filepath) {
 
     FILE *fp = fopen(filepath, "r");
     if(fp == NULL) {
-        fprintf(stderr, "FAILED fopen at find_num_tot_queries");
+        fprintf(stderr, "FAILED fopen at find_max_queries");
         exit(-4);
     }
 
