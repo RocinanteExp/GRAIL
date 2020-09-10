@@ -28,6 +28,7 @@ typedef struct {
 } thread_arg;
 
 static uint32_t read_queries_from_file(const char *filepath, query_set *queries);
+static uint32_t find_max_queries(const char *filepath);
 static uint32_t compute_thread_query_indeces(uint32_t tot_queries, uint32_t max_threads, uint32_t *query_indeces);
 static void *query_solver(void *argument);
 static query_set* init_query_struct(uint32_t size);
@@ -42,26 +43,39 @@ bool find_path_reachability(uint32_t source_id, uint32_t dest_id, Graph* graph, 
 static query_set *queries = NULL;
 static Bitmap *visited_nodes_multi[MAX_THREADS_QUERY] = {NULL};
 
-void query_print_results(char *filepath) {
+int query_print_results(char *filepath) {
+    if(queries == NULL)
+        return -1;
     query_print_results_to_file(queries, queries->length, filepath); 
+    return 0;
 }
 
 void query_cleanup(void) {
     destroy_query_struct(queries);
 }
 
-bool check_query(int index, int *src, int *dst) {
+int check_query(int index, int *src, int *dst) {
+
+    if(queries == NULL) {
+        fprintf(stderr, "You have to run query_init before of check_query\n");
+        return -2;
+    }
+
+    if(index < 0 || index >= queries->length)
+        return -1;
     *src = queries->routes[index].src;
     *dst = queries->routes[index].dst;
     if(bitmap_test_bit(queries->res, index))
-        return true;
-    return false;
+        return 1;
+    return 0;
+
 }
 
 void query_init(const char *filepath, Graph *g) {
 
    Graph *graph = g;
-   queries = init_query_struct(MAX_QUERIES);
+   uint32_t num_max_queries = find_max_queries(filepath);
+   queries = init_query_struct(num_max_queries);
 
 #if DEBUG
    fprintf(stdout, "READING queries from '%s'...\n", filepath);
@@ -149,6 +163,24 @@ static void *query_solver(void *argument) {
 
     pthread_exit(NULL);
 };
+
+static uint32_t find_max_queries(const char *filepath) {
+
+    FILE *fp = fopen(filepath, "r");
+    if(fp == NULL) {
+        fprintf(stderr, "FAILED fopen at find_num_tot_queries");
+        exit(-4);
+    }
+
+    char buff[MAX_LENGTH_BUFFER];
+    size_t lines = 0;
+
+    while(fgets(buff, MAX_LENGTH_BUFFER, fp))
+        lines++;
+
+    fclose(fp);
+    return lines;
+}
 
 static uint32_t read_queries_from_file(const char *filepath, query_set *queries) {
 
@@ -248,7 +280,7 @@ bool find_path_reachability(uint32_t source_id, uint32_t dest_id, Graph *graph, 
 
 }
 
-static query_set* init_query_struct(uint32_t size) {
+static query_set *init_query_struct(uint32_t size) {
     query_set *q = malloc(sizeof(query_set));
     q->routes = malloc(size * sizeof(route));
     q->res = bitmap_create(size);

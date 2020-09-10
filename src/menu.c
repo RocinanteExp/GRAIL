@@ -8,7 +8,7 @@ void menu(int argc, char **argv) {
     if(argc < 4 || argc > 6) {
         printf("Error usage: %s <graph> <n> <query> [-l] [-q]\n", argv[0]);
         printf("   -l => print labels to test/output/labels_out.txt\n");
-        printf("   -q => print query results to test/queries_out.txt\n");
+        printf("   -q => print query results to test/output/queries_out.txt\n");
         return;
     }
 
@@ -51,21 +51,38 @@ void menu(int argc, char **argv) {
         label_print_to_file("test/output/labels_out.txt", graph);
 
     query_init(query_path, graph);
+
     if(do_print_queries)
         query_print_results("test/output/queries_out.txt");
     else {
         while(true) { 
             int src, dst, query_number;
+            bool err = false;
             printf("Enter query number: (-1 to finish)\n"); 
-            scanf("%d", &query_number);
-            if(query_number == -1) {
+            int ret = scanf("%d", &query_number);
+            if(ret != 1) {
+                fprintf(stderr, "FAILED scanf of query_number at menu\n");
+                err = true;
+            }
+            if(query_number == -1 || err == true) {
                 printf("Thank you for using our program\n");
                 query_cleanup();
                 graph_destroy(graph);
                 break;
             }
-            bool res = check_query(query_number, &src, &dst);
-            printf("    src %d dst %d is %s\n", src, dst, res == true ? "reachable" : "unreachable");
+            int res = check_query(query_number, &src, &dst);
+            switch(res) {
+                case -1:
+                    printf("The query number %d is out of boundary\n", query_number);
+                    break;
+                case -2:
+                    printf("No results to be found. (tip: prob you didn't run query_init)\n");
+                    exit(-6);
+                    break;
+                default:
+                    printf(">> src %d dst %d is %s\n", src, dst, res == true ? "reachable" : "unreachable");
+                    break;
+            }
         }
     }
 

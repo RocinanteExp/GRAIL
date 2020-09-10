@@ -168,7 +168,10 @@ Graph *graph_create(const char *filepath, const int num_intervals)
 
     // parsing the first line
     char curr_line[BUFF_SIZE];
-    fgets(curr_line, BUFF_SIZE, fin);
+    char *ret = fgets(curr_line, BUFF_SIZE, fin);
+    if(ret == NULL) {
+        fprintf(stderr, "FAILED reading first line of file %s with fgets at graph_create\n", filepath);
+    }
     sscanf(curr_line, "%u", &num_nodes);
 #if DEBUG
     printf("Num of nodes %u\n", num_nodes);
