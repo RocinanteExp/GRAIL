@@ -12,10 +12,10 @@ make
 
 OPTIONS
 	graph_file    = relative or absolute path
-	n                  = number of intervals
+	n             = number of intervals
 	query_file    = relative or absolute path
-	-l                 = print generated labels to <add filepath>
-	-q                = print generated query results to <add filepath>
+	-l            = print generated labels to <add filepath>
+	-q            = print generated query results to <add filepath>
 ```
 The executable is saved as bin/main
 for the tests:

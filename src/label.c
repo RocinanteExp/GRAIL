@@ -12,6 +12,7 @@ struct thread_argument {
     Graph* graph;
     uint32_t idx;
     uint32_t rank;
+    unsigned int seed;
 };
 
 static void* thread_generate_interval(void* thread_argument);
@@ -19,15 +20,15 @@ static void* thread_generate_interval(void* thread_argument);
 #if !TEST
 static 
 #endif
-void vec_random_shuffle(uint32_t *vec, uint32_t size)
+void vec_random_shuffle(uint32_t *vec, uint32_t size,unsigned int seed)
 {
     uint32_t n = size, j = 0, i = 0, step = 0;
 
     if(size > 1000000)
         n = 1000000;
 
-    unsigned int si = rand();  
-    unsigned int sj = rand();
+    unsigned int si = rand_r(&seed);  
+    unsigned int sj = rand_r(&seed);
 
     for(step = 0; step < n; ++step)
     {
@@ -42,7 +43,7 @@ void vec_random_shuffle(uint32_t *vec, uint32_t size)
 #if !TEST
 static 
 #endif
-void randomized_visit(Graph* graph, Bitmap* visited_nodes, uint32_t node_id, uint32_t idx, uint32_t* rank)
+void randomized_visit(Graph* graph, Bitmap* visited_nodes, uint32_t node_id, uint32_t idx, uint32_t* rank,unsigned int state)
 {
     int j = 0;
     uint32_t num_childrens = 0;
@@ -60,14 +61,14 @@ void randomized_visit(Graph* graph, Bitmap* visited_nodes, uint32_t node_id, uin
 #if TEST
         j = 0;
 #else
-    unsigned int state = rand(); 
+    //unsigned int state = rand(); 
     j = rand_r(&state)%node->num_children;
 #endif
 
     while(num_childrens < node->num_children)
     {
         num_childrens++;
-        randomized_visit(graph, visited_nodes, node->children[j], idx, rank);
+        randomized_visit(graph, visited_nodes, node->children[j], idx, rank,state);
         j = (j+1)%node->num_children;
     }
     
@@ -97,6 +98,7 @@ static void *thread_generate_interval(void *thread_argument)
     Graph *graph = arg->graph;
     uint32_t idx = arg->idx;
     uint32_t rank = arg->rank;
+    unsigned int seed= arg->seed;
     int i = 0;
 
     uint32_t *roots = malloc(graph->num_root_nodes*sizeof(uint32_t));
@@ -108,7 +110,7 @@ static void *thread_generate_interval(void *thread_argument)
     for(i = 0; i < graph->num_root_nodes; i++)
         roots[i] = graph->root_nodes[i];
 #if !TEST
-    vec_random_shuffle(roots, graph->num_root_nodes);
+    vec_random_shuffle(roots, graph->num_root_nodes,seed);
 #endif
 
     Bitmap* visited_nodes = bitmap_create(graph->num_nodes);
@@ -119,7 +121,7 @@ static void *thread_generate_interval(void *thread_argument)
     }
 
     for(i = 0; i < graph->num_root_nodes; i++)
-        randomized_visit(graph, visited_nodes, roots[i], idx, &rank);
+        randomized_visit(graph, visited_nodes, roots[i], idx, &rank,seed);
 
     bitmap_destroy(visited_nodes);
     free(roots);
@@ -149,6 +151,7 @@ void label_generate_random_labels(Graph* graph)
         args[idx].graph = graph;
         args[idx].idx = idx;
         args[idx].rank = 1; 
+        args[idx].seed= rand();
         int err = pthread_create(&tids[idx], NULL, thread_generate_interval, (void*)&args[idx]);
         if(err != 0)
         {
