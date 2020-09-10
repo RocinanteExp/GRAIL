@@ -16,7 +16,18 @@ bool find_path_reachability(uint32_t source_id, uint32_t dest_id, Graph *graph, 
  */
 void query_init(const char *filepath, Graph *graph);
 void query_cleanup(void);
-void query_print_results(char *filepath);
-bool check_query(int index, int *src, int *dst);
+/* Prints the results of the query to file at filepath 
+ * Return: 
+ *    on error -1
+ */
+int query_print_results(char *filepath);
+
+/* Returns the result of the query at position "index", i.e. returns the value found by query_init for the query at line num "index". Furthermore, it going to save at *src and *dst respectively the source node id and the dest node id.
+ * Return: 
+ *    -1 in case of index is out of boundary 
+ *    0 in case there is not a path from src to dst
+ *    1 in case there is a path from src to dst
+ */
+int check_query(int index, int *src, int *dst);
 
 #endif

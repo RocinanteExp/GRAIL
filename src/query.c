@@ -43,20 +43,32 @@ bool find_path_reachability(uint32_t source_id, uint32_t dest_id, Graph* graph, 
 static query_set *queries = NULL;
 static Bitmap *visited_nodes_multi[MAX_THREADS_QUERY] = {NULL};
 
-void query_print_results(char *filepath) {
+int query_print_results(char *filepath) {
+    if(queries == NULL)
+        return -1;
     query_print_results_to_file(queries, queries->length, filepath); 
+    return 0;
 }
 
 void query_cleanup(void) {
     destroy_query_struct(queries);
 }
 
-bool check_query(int index, int *src, int *dst) {
+int check_query(int index, int *src, int *dst) {
+
+    if(queries == NULL) {
+        fprintf(stderr, "You have to run query_init before of check_query\n");
+        return -2;
+    }
+
+    if(index < 0 || index >= queries->length)
+        return -1;
     *src = queries->routes[index].src;
     *dst = queries->routes[index].dst;
     if(bitmap_test_bit(queries->res, index))
-        return true;
-    return false;
+        return 1;
+    return 0;
+
 }
 
 void query_init(const char *filepath, Graph *g) {
