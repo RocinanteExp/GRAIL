@@ -29,37 +29,41 @@ The other rules, related to testing, are: test_label, test_graph, test_query, te
 SDPProjectQ2
 ├── README.md
 ├── bin
-│   ├── main
-│   └── test
+├── gen_query.c
 ├── include
 │   ├── bitmap.h
 │   ├── constants.h
 │   ├── graph.h
 │   ├── label.h
-│   └── query.h
+│   ├── menu.h
+│   ├── query.h
+│   └── time_tracker.h
 ├── makefile
 ├── src
 │   ├── bitmap.c
 │   ├── graph.c
 │   ├── label.c
 │   ├── main.c
-│   └── query.c
+│   ├── menu.c
+│   ├── query.c
+│   └── time_tracker.c
 └── test
-    ├── bitmap_test.c
-    ├── graph_test.c
-    ├── input 
+    ├── input
     │   ├── grafo20.gra
     │   ├── grafo20.png
     │   ├── grafo20_25.que
     │   ├── grafo_con_rango.png
     │   └── large
-    │       ├── arXiv_sub_6000-1.gra
-    │       ├── cit-Patents.scc.gra
-    ├── label_test.c
-    ├── node_test.c
+    │       
     ├── output
-    │   └── query_output.txt
-    └── query_test.c
+    │   ├── labels_out.txt
+    │   └── queries_out.txt
+    └── tests
+        ├── bitmap_test.c
+        ├── graph_test.c
+        ├── label_test.c
+        ├── node_test.c
+        └── query_test.c
 ```
 The repository is divided as the following:
 * the **bin folder** contains the executables.
