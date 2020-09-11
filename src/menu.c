@@ -34,11 +34,12 @@ void menu(int argc, char **argv) {
     };
 
 #if DEBUG
-    printf("Graph path:       %s\n", graph_path);
-    printf("Num of intervals: %d\n", num_intervals);
-    printf("Query path:       %s\n", query_path);
-    printf("Print labels to file  %s\n", do_print_labels == true ? "YES" : "NO");
-    printf("Print queries to file %s\n", do_print_queries == true ? "YES" : "NO");
+    printf("GRAPH PATH:             '%s'\n", graph_path);
+    printf("TOT INTERVALS:          %d\n", num_intervals);
+    printf("QUERY PATH:             '%s'\n", query_path);
+    printf("PRINT LABELS TO FILE?   %s\n", do_print_labels == true ? "YES" : "NO");
+    printf("PRINT QUERIES TO FILE?  %s\n", do_print_queries == true ? "YES" : "NO");
+    printf("\n");
 #endif 
 
     Graph* graph = graph_create(graph_path, num_intervals);

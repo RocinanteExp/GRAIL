@@ -6,6 +6,7 @@
 #include <time.h>
 #include "label.h"
 #include "graph.h"
+#include "time_tracker.h"
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 struct thread_argument {
@@ -132,8 +133,9 @@ static void *thread_generate_interval(void *thread_argument)
 void label_generate_random_labels(Graph* graph)
 {
 #if DEBUG
-    fprintf(stdout, "GENERATING LABELS...\n");
-    clock_t start = clock();
+    long before_time, after_time;
+    before_time = get_now();
+    fprintf(stdout, "GENERATING LABELS\n");
 #endif
 
     srand(time(NULL));
@@ -174,8 +176,8 @@ void label_generate_random_labels(Graph* graph)
     free(tids);
 
 #if DEBUG
-    clock_t end = clock();
-    fprintf(stdout, "LABEL GENERATION took %fs\n", (double)(end - start) / CLOCKS_PER_SEC);
+    after_time = get_now();
+    fprintf(stdout, "LABEL GENERATION took %ld ms\n\n", after_time - before_time);
 #endif
 
 }

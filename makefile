@@ -4,7 +4,7 @@ CC=gcc
 IDIR=./include
 SDIR=./src
 CFLAGS=-pthread -Wall -g -O3
-TEST_SOURCE_FILES=src/label.c src/bitmap.c src/graph.c src/query.c
+TEST_SOURCE_FILES=src/label.c src/bitmap.c src/graph.c src/query.c src/time_tracker.c
 main: $(SDIR)/*.c $(IDIR)/*.h
 	$(CC) $(SDIR)/*.c $(CFLAGS) -I $(IDIR) -o bin/main
 test_query: $(TEST_SOURCE_FILES) test/tests/query_test.c

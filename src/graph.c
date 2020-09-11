@@ -4,6 +4,7 @@
 #include <time.h>
 #include <pthread.h>
 #include "graph.h"
+#include "time_tracker.h"
 #define MAGIC_NUMBER 4096 
 #define BUFFER_SIZE 10240 
 
@@ -146,7 +147,9 @@ int32_t find_root_nodes(Graph* p_graph, Bitmap* b_incoming_edge_nodes)
 Graph *graph_create(const char *filepath, const int num_intervals)
 {
 #if DEBUG
-    clock_t start = clock();
+    long before_time, after_time;
+    before_time = get_now();
+    fprintf(stdout, "CREATING GRAPH\n");
 #endif
 
     pthread_spinlock_t s_lock;
@@ -174,7 +177,7 @@ Graph *graph_create(const char *filepath, const int num_intervals)
     }
     sscanf(curr_line, "%u", &num_nodes);
 #if DEBUG
-    printf("Num of nodes %u\n", num_nodes);
+    fprintf(stdout, ">> The graph has %u nodes\n", num_nodes);
 #endif
     p_graph->num_nodes = num_nodes;
     Bitmap *b_incoming_edge_nodes = bitmap_create(num_nodes);
@@ -197,14 +200,14 @@ Graph *graph_create(const char *filepath, const int num_intervals)
     };
 
     pthread_t thread_ids[MAX_THREADS_GRAPH];
-    struct thread_arg thread_arg = {
+    struct thread_arg t_arg = {
         .fin = fin, .graph = p_graph, .num_intervals = num_intervals,
         .curr_iteration = &curr_iteration, .tot_nodes = num_nodes, .lock = &s_lock,
         .inc_edge_nodes = b_incoming_edge_nodes
     };
 
     for(int i = 0; i < MAX_THREADS_GRAPH; i++) {
-        int err = pthread_create(&thread_ids[i], NULL, thread_entry_point, (void*) &thread_arg);
+        int err = pthread_create(&thread_ids[i], NULL, thread_entry_point, (void*) &t_arg);
         if(err != 0) {
             fprintf(stderr, "FAILED creating %d thread", i);
             return NULL;
@@ -238,8 +241,8 @@ Graph *graph_create(const char *filepath, const int num_intervals)
     fclose(fin);
 
 #if DEBUG
-    clock_t end = clock();
-    fprintf(stdout, "GRAPH GENERATION took %fs\n", (double)(end - start) / CLOCKS_PER_SEC);
+    after_time = get_now();
+    fprintf(stdout, "GRAPH GENERATION took %ld ms\n\n", after_time - before_time);
 #endif
 
     return p_graph;
@@ -251,14 +254,14 @@ static uint32_t parse_node_id(const char* buf) {
     return node_id;
 }
 
-static void* thread_entry_point(void *thread_argument) {
+static void *thread_entry_point(void *thread_argument) {
 
     const uint16_t BUFF_SIZE = BUFFER_SIZE;
     const uint16_t NUM_LINES = MAX_THREADS_GRAPH;
     char lines[NUM_LINES][BUFF_SIZE];
     uint32_t node_ids[NUM_LINES];
 
-    struct thread_arg *arg = (struct thread_arg*) thread_argument;
+    struct thread_arg *arg = (struct thread_arg *) thread_argument;
     FILE *fin = arg->fin;
     uint32_t num_intervals = arg->num_intervals;
     uint32_t tot_nodes = arg->tot_nodes;
@@ -268,7 +271,7 @@ static void* thread_entry_point(void *thread_argument) {
     pthread_spinlock_t *p_lock = arg->lock;
 
 #if DEBUG
-    fprintf(stdout, "> Thread_id %ld args: num_intervals %d tot_nodes %d iteration %d\n", pthread_self(), num_intervals, tot_nodes, *p_curr_iteration);
+    fprintf(stdout, ">> Thread %ld args: num_intervals %d tot_nodes %d iteration %d\n", pthread_self(), num_intervals, tot_nodes, *p_curr_iteration);
 #endif
 // avoid lock overhead when reading for the first time p_curr_iteration
         while(true){

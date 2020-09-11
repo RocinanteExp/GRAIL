@@ -6,6 +6,7 @@
 #include "query.h"
 #include "label.h"
 #include "constants.h"
+#include "time_tracker.h" 
 
 #define MAX_LENGTH_BUFFER 30 // max node_id = 2^32 - 1 is equivalent to 10 char of 1 byte. We multiple by 2 and rounded to 30. 
 
@@ -78,30 +79,26 @@ void query_init(const char *filepath, Graph *g) {
    queries = init_query_struct(num_max_queries);
 
 #if DEBUG
-   fprintf(stdout, "READING queries from '%s'...\n", filepath);
-   clock_t start = clock();
+   long before_time, after_time;
+   before_time = get_now();
+   fprintf(stdout, "READING QUERIES from '%s'...\n", filepath);
 #endif
 
    uint32_t num_tot_queries = read_queries_from_file(filepath, queries);
    queries->length = num_tot_queries;
 
 #if DEBUG
-   clock_t end = clock();
-   fprintf(stdout, "READ %d queries. It took %fs\n\n", num_tot_queries, (double)(end - start) / CLOCKS_PER_SEC);
+   after_time = get_now();
+   fprintf(stdout, "READ %d queries. It took %ld ms\n\n", num_tot_queries, after_time - before_time);
+
+   before_time = get_now();
    fprintf(stdout, "SOLVING QUERIES ...\n"); 
-   start = clock();
 #endif
 
    pthread_t thread_ids[MAX_THREADS_QUERY];
    uint32_t thread_query_indeces[MAX_THREADS_QUERY * 2];
    // num_running_threads is equal to MAX_THREADS_QUREY in most cases
    const uint32_t num_running_threads = compute_thread_query_indeces(num_tot_queries, MAX_THREADS_QUERY, thread_query_indeces);
-
-#if DEBUG
-   for(int j = 0; j < num_running_threads; j++) {
-       fprintf(stdout, "thread_query_indeces %d %d %d\n", j, thread_query_indeces[j*2], thread_query_indeces[j*2+1]);
-   }
-#endif
 
    for(uint32_t i = 0; i < num_running_threads; i++) {
        visited_nodes_multi[i] = bitmap_create(graph->num_nodes);
@@ -136,8 +133,8 @@ void query_init(const char *filepath, Graph *g) {
    }
 
 #if DEBUG
-   end = clock();
-   fprintf(stdout, "SOLVING %u QUERIES took %fs\n", queries->length, (double)(end - start) / CLOCKS_PER_SEC);
+   after_time = get_now();
+   fprintf(stdout, "SOLVING %u QUERIES took %ld ms\n", queries->length, after_time - before_time);
 #endif
 
 };
@@ -151,7 +148,7 @@ static void *query_solver(void *argument) {
     uint32_t id = arg->id; 
 
 #if DEBUG
-    fprintf(stdout, "THREAD %u start_index %u end_index %u graph %p visited_notes_multi %p\n", id, start_index, end_index, graph, visited_nodes_multi[id]);
+    fprintf(stdout, ">> THREAD %u start_index %u end_index %u\n", id, start_index, end_index);
 #endif
 
     for(uint32_t i = start_index; i < end_index; i++) {
@@ -168,7 +165,7 @@ static uint32_t find_max_queries(const char *filepath) {
 
     FILE *fp = fopen(filepath, "r");
     if(fp == NULL) {
-        fprintf(stderr, "FAILED fopen at find_max_queries");
+        fprintf(stderr, "FAILED fopen at find_max_queries of %s\n", filepath);
         exit(-4);
     }
 
@@ -183,10 +180,6 @@ static uint32_t find_max_queries(const char *filepath) {
 }
 
 static uint32_t read_queries_from_file(const char *filepath, query_set *queries) {
-
-#if DEBUG
-    fprintf(stdout, "> Starting reading queries from file %s\n", filepath);
-#endif
 
     FILE *fp = fopen(filepath, "r");
     if(fp == NULL) {
@@ -210,10 +203,6 @@ static uint32_t read_queries_from_file(const char *filepath, query_set *queries)
             break;
         }
     }
-
-#if DEBUG
-    fprintf(stdout, "> Read %ld queries.\n> Exiting read_queries_from_file\n", next);
-#endif
 
     fclose(fp);
     return next;
