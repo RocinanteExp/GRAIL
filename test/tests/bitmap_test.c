@@ -29,14 +29,14 @@ START_TEST (test_bitmap_set_bit)
 }
 END_TEST
 
-START_TEST (test_Bitmap_clear_bit)
+START_TEST (test_bitmap_clear_bit)
 {
     Bitmap* bitmap=NULL;
     bitmap = bitmap_create(32);
     int pos=0;
     bitmap->bitset[0]=1;
     ck_assert( (bitmap->bitset[pos / SIZE_CHUNK] & 1 << (pos % SIZE_CHUNK))== (1 << (pos % SIZE_CHUNK)));
-    Bitmap_clear_bit(bitmap,pos);
+    bitmap_clear_bit(bitmap,pos);
     ck_assert( (bitmap->bitset[pos / SIZE_CHUNK] & 1 << (pos % SIZE_CHUNK))== 0);
 
 }
@@ -88,7 +88,7 @@ Suite* bitmap_suite(void)
     tcase_add_test(tc_core, test_bitmap_set_all);
     tcase_add_test(tc_core, test_bitmap_set_bit);
     tcase_add_test(tc_core, test_bitmap_test_bit);
-    tcase_add_test(tc_core, test_Bitmap_clear_bit);
+    tcase_add_test(tc_core, test_bitmap_clear_bit);
     tcase_add_test(tc_core, test_bitmap_destory);
     suite_add_tcase(s, tc_core);
     return s;

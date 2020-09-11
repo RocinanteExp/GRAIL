@@ -34,7 +34,7 @@ void bitmap_set_bit(Bitmap* bitmap, size_t pos){
 
 }
 
-void Bitmap_clear_bit(Bitmap* bitmap, size_t pos){
+void bitmap_clear_bit(Bitmap* bitmap, size_t pos){
 
    if(pos < 0 || pos >= bitmap->num_bits)
        return;

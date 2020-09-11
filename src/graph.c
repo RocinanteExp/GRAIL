@@ -175,7 +175,11 @@ Graph *graph_create(const char *filepath, const int num_intervals)
     if(ret == NULL) {
         fprintf(stderr, "FAILED reading first line of file %s with fgets at graph_create\n", filepath);
     }
-    sscanf(curr_line, "%u", &num_nodes);
+    int ret_val = sscanf(curr_line, "%u", &num_nodes);
+    if(ret_val != 1) {
+        fprintf(stderr, "BAD FILE FORMAT. READ AS FIRST LINE\n%s", curr_line);
+        exit(3);
+    }
 #if DEBUG
     fprintf(stdout, ">> The graph has %u nodes\n", num_nodes);
 #endif

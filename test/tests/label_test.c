@@ -62,7 +62,7 @@ START_TEST (test_vec_random_shuffle)
 {
     uint32_t vec[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
     
-    vec_random_shuffle(vec, 10);
+    vec_random_shuffle(vec, 10, 1);
 
     bool is_all = true;
     bool found = false;

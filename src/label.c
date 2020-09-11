@@ -21,7 +21,7 @@ static void* thread_generate_interval(void* thread_argument);
 #if !TEST
 static 
 #endif
-void vec_random_shuffle(uint32_t *vec, uint32_t size,unsigned int seed)
+void vec_random_shuffle(uint32_t *vec, uint32_t size, uint32_t seed)
 {
     uint32_t n = size, j = 0, i = 0, step = 0;
 
@@ -44,7 +44,7 @@ void vec_random_shuffle(uint32_t *vec, uint32_t size,unsigned int seed)
 #if !TEST
 static 
 #endif
-void randomized_visit(Graph* graph, Bitmap* visited_nodes, uint32_t node_id, uint32_t idx, uint32_t* rank,unsigned int state)
+void randomized_visit(Graph* graph, Bitmap* visited_nodes, uint32_t node_id, uint32_t idx, uint32_t* rank, uint32_t state)
 {
     int j = 0;
     uint32_t num_childrens = 0;
@@ -60,9 +60,8 @@ void randomized_visit(Graph* graph, Bitmap* visited_nodes, uint32_t node_id, uin
     if(node->num_children>0)
 
 #if TEST
-        j = 0;
+    j = 0;
 #else
-    //unsigned int state = rand(); 
     j = rand_r(&state)%node->num_children;
 #endif
 
@@ -99,7 +98,7 @@ static void *thread_generate_interval(void *thread_argument)
     Graph *graph = arg->graph;
     uint32_t idx = arg->idx;
     uint32_t rank = arg->rank;
-    unsigned int seed= arg->seed;
+    unsigned int seed = arg->seed;
     int i = 0;
 
     uint32_t *roots = malloc(graph->num_root_nodes*sizeof(uint32_t));
@@ -111,7 +110,7 @@ static void *thread_generate_interval(void *thread_argument)
     for(i = 0; i < graph->num_root_nodes; i++)
         roots[i] = graph->root_nodes[i];
 #if !TEST
-    vec_random_shuffle(roots, graph->num_root_nodes,seed);
+    vec_random_shuffle(roots, graph->num_root_nodes, seed);
 #endif
 
     Bitmap* visited_nodes = bitmap_create(graph->num_nodes);
@@ -137,8 +136,8 @@ void label_generate_random_labels(Graph* graph)
     before_time = get_now();
     fprintf(stdout, "GENERATING LABELS\n");
 #endif
-
     srand(time(NULL));
+
     uint32_t idx = 0;
     pthread_t *tids = malloc(graph->num_intervals * sizeof(pthread_t));
     struct thread_argument *args = malloc(graph->num_intervals * sizeof(struct thread_argument));
@@ -153,7 +152,7 @@ void label_generate_random_labels(Graph* graph)
         args[idx].graph = graph;
         args[idx].idx = idx;
         args[idx].rank = 1; 
-        args[idx].seed= rand();
+        args[idx].seed = rand();
         int err = pthread_create(&tids[idx], NULL, thread_generate_interval, (void*)&args[idx]);
         if(err != 0)
         {

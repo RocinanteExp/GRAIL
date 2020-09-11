@@ -13,7 +13,7 @@ typedef struct label_s {
 } Label;
 
 // parallel fuction for labelling of the graph
-void label_generate_random_labels(Graph* graph);
+void label_generate_random_labels(Graph *graph);
 // print the labels to filepath with option "w"
 bool label_print_to_file(char *filename, Graph *graph); 
 // create a new label
@@ -22,8 +22,8 @@ Label label_init(uint32_t l, uint32_t r);
 bool label_include(Label l1, Label l2); 
 
 #if TEST
-void randomized_visit(Graph* graph, Bitmap* visited_nodes,uint32_t node_id, uint32_t idx, uint32_t* rank);
-void vec_random_shuffle(uint32_t* vec, uint32_t size);
+void randomized_visit(Graph *graph, Bitmap *visited_nodes, uint32_t node_id, uint32_t idx, uint32_t *rank, uint32_t state);
+void vec_random_shuffle(uint32_t* vec, uint32_t size, uint32_t seed);
 #endif
 
 #endif
