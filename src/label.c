@@ -181,7 +181,7 @@ void label_generate_random_labels(Graph* graph)
 
 }
 
-bool label_print_to_file(char *filename, Graph *graph)
+bool label_print_to_file(const char *filename, Graph *graph)
 {
     FILE *fout = fopen(filename, "w");
     if(fout == NULL) {
@@ -227,9 +227,9 @@ Label label_init(uint32_t l,uint32_t r)
     return x;
 }
 
-bool label_include(Label l1,Label l2)
+bool label_include(Label *l1,Label *l2)
 {
-    if(l1.left < l2.left || l1.right > l2.right)
+    if((l1->left < l2->left) || (l1->right > l2->right))
         return false;
     return true;
 }

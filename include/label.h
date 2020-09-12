@@ -15,11 +15,11 @@ typedef struct label_s {
 // parallel fuction for labelling of the graph
 void label_generate_random_labels(Graph *graph);
 // print the labels to filepath with option "w"
-bool label_print_to_file(char *filename, Graph *graph); 
+bool label_print_to_file(const char *filename, Graph *graph); 
 // create a new label
 Label label_init(uint32_t l, uint32_t r);
 // check whether l1 is included in l2
-bool label_include(Label l1, Label l2); 
+bool label_include(Label *l1, Label *l2); 
 
 #if TEST
 void randomized_visit(Graph *graph, Bitmap *visited_nodes, uint32_t node_id, uint32_t idx, uint32_t *rank, uint32_t state);

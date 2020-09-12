@@ -32,19 +32,18 @@ static uint32_t read_queries_from_file(const char *filepath, query_set *queries)
 static uint32_t find_max_queries(const char *filepath);
 static uint32_t compute_thread_query_indeces(uint32_t tot_queries, uint32_t max_threads, uint32_t *query_indeces);
 static void *query_solver(void *argument);
-static query_set* init_query_struct(uint32_t size);
+static query_set *init_query_struct(uint32_t size);
 static void destroy_query_struct(query_set *q);
-static void query_print_results_to_file(query_set *queries, uint32_t length, char *filepath);
+static void query_print_results_to_file(query_set *queries, uint32_t length, const char *filepath);
+static void init_vst_nodes(const uint32_t row_length, const uint32_t col_length);
+static void destroy_vst_nodes(const uint32_t row_length);
 
-#if !TEST
-static 
-#endif
-bool find_path_reachability(uint32_t source_id, uint32_t dest_id, Graph* graph, Bitmap *vst_nodes);
+static bool find_path_reachability(uint32_t source_id, uint32_t dest_id, Graph *graph, uint32_t *vst, uint32_t q_ind);
 
 static query_set *queries = NULL;
-static Bitmap *visited_nodes_multi[MAX_THREADS_QUERY] = {NULL};
+static uint32_t **vst_nodes = NULL;
 
-int query_print_results(char *filepath) {
+int query_print_results(const char *filepath) {
     if(queries == NULL)
         return -1;
     query_print_results_to_file(queries, queries->length, filepath); 
@@ -58,7 +57,7 @@ void query_cleanup(void) {
 int check_query(int index, int *src, int *dst) {
 
     if(queries == NULL) {
-        fprintf(stderr, "You have to run query_init before of check_query\n");
+        fprintf(stderr, "You have to run query_init!!\n");
         return -2;
     }
 
@@ -72,9 +71,8 @@ int check_query(int index, int *src, int *dst) {
 
 }
 
-void query_init(const char *filepath, Graph *g) {
+void query_init(const char *filepath, Graph *graph) {
 
-   Graph *graph = g;
    uint32_t num_max_queries = find_max_queries(filepath);
    queries = init_query_struct(num_max_queries);
 
@@ -100,16 +98,9 @@ void query_init(const char *filepath, Graph *g) {
    // num_running_threads is equal to MAX_THREADS_QUREY in most cases
    const uint32_t num_running_threads = compute_thread_query_indeces(num_tot_queries, MAX_THREADS_QUERY, thread_query_indeces);
 
-   for(uint32_t i = 0; i < num_running_threads; i++) {
-       visited_nodes_multi[i] = bitmap_create(graph->num_nodes);
-       if(visited_nodes_multi[i] == NULL) {
-           fprintf(stderr, "FAILED bitmap_create for visited_nodes_multi at query_init\n");
-           exit(-4);
-       }
-   }
+   init_vst_nodes(num_running_threads, graph->num_nodes);
 
    thread_arg args[num_running_threads];
-
    for(int i = 0; i < num_running_threads; i++) {
        args[i].start = thread_query_indeces[i*2];
        args[i].end = thread_query_indeces[i*2 + 1];
@@ -128,9 +119,7 @@ void query_init(const char *filepath, Graph *g) {
        pthread_join(thread_ids[i], NULL);
    }
 
-   for(int i = 0; i < num_running_threads; i++) {
-       bitmap_destroy(visited_nodes_multi[i]);
-   }
+   destroy_vst_nodes(num_running_threads);
 
 #if DEBUG
    after_time = get_now();
@@ -152,8 +141,8 @@ static void *query_solver(void *argument) {
 #endif
 
     for(uint32_t i = start_index; i < end_index; i++) {
-        bitmap_clear_all(visited_nodes_multi[id]); 
-        if(find_path_reachability(queries->routes[i].src, queries->routes[i].dst, graph, visited_nodes_multi[id])) {
+        //vst_nodes[id][queries->routes[i].src] = i + 1;
+        if(find_path_reachability(queries->routes[i].src, queries->routes[i].dst, graph, vst_nodes[id], i + 1)) {
             bitmap_set_bit(queries->res, i);
         }
     }
@@ -213,22 +202,19 @@ static uint32_t read_queries_from_file(const char *filepath, query_set *queries)
 static bool is_a_possible_path(Node *source, Node *dest) {
     uint32_t num_intervals = source->num_intervals;
     for(uint32_t i = 0; i < num_intervals; i++){
-        if(!label_include(dest->intervals[i], source->intervals[i])){
+        if(!label_include(&(dest->intervals[i]), &(source->intervals[i]))){
             return false;
         }
     }
     return true;
 }
 
-#if !TEST
-static 
-#endif
-bool find_path_reachability(uint32_t source_id, uint32_t dest_id, Graph *graph, Bitmap *vst_nodes){
+static bool find_path_reachability(uint32_t source_id, uint32_t dest_id, Graph *graph, uint32_t *vst, uint32_t q_ind){
 
     if(source_id == dest_id)
         return true;
 
-    bitmap_set_bit(vst_nodes, source_id);
+    vst[source_id] = q_ind;
 
     Node *src_node = graph->nodes[source_id];
     if(src_node == NULL) {
@@ -236,37 +222,25 @@ bool find_path_reachability(uint32_t source_id, uint32_t dest_id, Graph *graph, 
         exit(-5);
     }
 
-    Node *dst_node = graph->nodes[dest_id];
-    if(dst_node == NULL) {
-        fprintf(stdout, "Node dst %u was not found in this graph at find_path_reachability\n", dest_id);
-        exit(-5);
-    }
     uint32_t num_children_src = src_node->num_children;
-
-    if(!is_a_possible_path(src_node, dst_node))
-        return false;
-
     // check if it's a false positive
     for(int i = 0; i < num_children_src; i++) {
         uint32_t curr_child_id = src_node->children[i]; 
-        // recurse only if child has not been visited  
-        if(!bitmap_test_bit(vst_nodes, curr_child_id)){ 
-            Node* curr_child_node = graph->nodes[curr_child_id];
-            // if a interval of "dst_node" is not contained in the corresponding interval of "curr_child_node" 
-            // then there is not a path from "curr_child_node" to "dst_node".
-            bool possible_path = true;
-            if(!is_a_possible_path(curr_child_node, dst_node))
-                possible_path = false;
-            
-            // recurse if this child leads to a possiple path to "dst_node"
-            if(possible_path && find_path_reachability(curr_child_id, dest_id, graph, vst_nodes)){
+        Node* curr_child_node = graph->nodes[curr_child_id];
+        Node *dst_node = graph->nodes[dest_id];
+        if(dst_node == NULL) {
+            fprintf(stdout, "Node dst %u was not found in this graph at find_path_reachability\n", dest_id);
+            exit(-5);
+        }
+
+        if((vst[curr_child_id] != q_ind) && is_a_possible_path(curr_child_node, dst_node)){ 
+            if(find_path_reachability(curr_child_id, dest_id, graph, vst, q_ind)) {
                 return true;
             }
         }
     }
 
     return false;
-
 }
 
 static query_set *init_query_struct(uint32_t size) {
@@ -283,7 +257,7 @@ static void destroy_query_struct(query_set *q) {
     free(q);
 }
 
-static void query_print_results_to_file(query_set *queries, uint32_t length, char *filepath) {
+static void query_print_results_to_file(query_set *queries, uint32_t length, const char *filepath) {
 
     if(filepath == NULL)
         filepath = "test/output/query_output.txt"; 
@@ -321,3 +295,26 @@ static uint32_t compute_thread_query_indeces(uint32_t tot_queries, uint32_t max_
 
    return tot_running_threads;
 }
+
+static void init_vst_nodes(const uint32_t row_length, const uint32_t col_length) {
+    vst_nodes = malloc(sizeof(uint32_t *) * row_length);
+    if(vst_nodes == NULL) {
+        fprintf(stderr, "FAILED malloc vst_nodes at init_vst_node\n");
+        exit(-4);
+    }
+
+    for(uint32_t i = 0; i < row_length; i++) {
+        vst_nodes[i] = calloc(col_length, sizeof(uint32_t));
+        if(vst_nodes[i] == NULL) {
+            fprintf(stderr, "FAILED malloc vst_nodes[%u] at init_vst_node\n", i);
+            exit(-4);
+        }
+    }
+};
+
+static void destroy_vst_nodes(const uint32_t row_length) {
+    for(uint32_t i = 0; i < row_length; i++) {
+        free(vst_nodes[i]);
+    }
+    free(vst_nodes);
+};

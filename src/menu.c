@@ -4,6 +4,12 @@
 #include "query.h"
 #include "constants.h"
 
+void cust_exit(Graph *graph) {
+    printf("Thank you for using our program\n");
+    query_cleanup();
+    graph_destroy(graph);
+};
+
 void menu(int argc, char **argv) {
     if(argc < 4 || argc > 6) {
         printf("Error usage: %s <graph> <n> <query> [-l] [-q]\n", argv[0]);
@@ -15,6 +21,9 @@ void menu(int argc, char **argv) {
     const char *graph_path = argv[1];
     const int num_intervals = atoi(argv[2]);
     const char *query_path = argv[3];
+    const char gen_label_path[] = "test/output/labels_out.txt";
+    const char res_query_path[] = "test/output/queries_out.txt";
+
     bool do_print_labels = false;
     bool do_print_queries = false;
     for(int i = 4; i < argc; i++) {
@@ -44,26 +53,32 @@ void menu(int argc, char **argv) {
 
     Graph* graph = graph_create(graph_path, num_intervals);
     if(graph == NULL) {
-        fprintf(stderr, "something went wrong :\\\n");
+        fprintf(stderr, "FAILED graph_create at menu.c\n");
         exit(-1);
     }
-#if DEBUG
-    char copy_path[100];
-    int n = sprintf(copy_path, "test/output/graph.copy");
-    if(n < 0) {
-        fprintf(stderr, "FAILED sprintf at menu.c\n");
-    }
-    else
-        graph_print_to_stream(copy_path, false, NULL, graph); 
+
+#if 0 
+    const char grafo_copy_path[] = "test/output/grafo.copy";
+    printf("PRINTING GRAPH to '%s'\n", graph_copy_path);
+    graph_print_to_stream(graph_copy_path, false, NULL, graph); 
+    printf("DONE\n\n");
 #endif
+
     label_generate_random_labels(graph);
-    if(do_print_labels)
-        label_print_to_file("test/output/labels_out.txt", graph);
+    if(do_print_labels) {
+        printf("PRINTING LABELS to '%s'\n", gen_label_path);
+        label_print_to_file(gen_label_path, graph);
+        printf("DONE\n\n");
+    }
 
     query_init(query_path, graph);
 
-    if(do_print_queries)
-        query_print_results("test/output/queries_out.txt");
+    if(do_print_queries) {
+        printf("PRINTING QUERIES RESULTS to '%s'\n", res_query_path);
+        query_print_results(res_query_path);
+        printf("DONE\n\n");
+        cust_exit(graph);
+    }
     else {
         while(true) { 
             int src, dst, query_number;
@@ -75,9 +90,7 @@ void menu(int argc, char **argv) {
                 err = true;
             }
             if(query_number == -1 || err == true) {
-                printf("Thank you for using our program\n");
-                query_cleanup();
-                graph_destroy(graph);
+                cust_exit(graph);
                 break;
             }
             int res = check_query(query_number, &src, &dst);

@@ -20,7 +20,7 @@ void query_cleanup(void);
  * Return: 
  *    on error -1
  */
-int query_print_results(char *filepath);
+int query_print_results(const char *filepath);
 
 /* Returns the result of the query at position "index", i.e. returns the value found by query_init for the query at line num "index". Furthermore, it going to save at *src and *dst respectively the source node id and the dest node id.
  * Return: 
