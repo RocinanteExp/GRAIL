@@ -180,9 +180,7 @@ Graph *graph_create(const char *filepath, const int num_intervals)
         fprintf(stderr, "BAD FILE FORMAT. READ AS FIRST LINE\n%s", curr_line);
         exit(3);
     }
-#if DEBUG
-    fprintf(stdout, ">> The graph has %u nodes\n", num_nodes);
-#endif
+
     p_graph->num_nodes = num_nodes;
     Bitmap *b_incoming_edge_nodes = bitmap_create(num_nodes);
 
@@ -246,6 +244,9 @@ Graph *graph_create(const char *filepath, const int num_intervals)
 
 #if DEBUG
     after_time = get_now();
+    fprintf(stdout, "GRAPH has %u nodes\n", p_graph->num_nodes);
+    fprintf(stdout, "      has %u root nodes\n", p_graph->num_root_nodes);
+    fprintf(stdout, "      each node has %u intervals\n", p_graph->num_intervals);
     fprintf(stdout, "GRAPH GENERATION took %ld ms\n\n", after_time - before_time);
 #endif
 

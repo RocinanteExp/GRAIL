@@ -58,7 +58,7 @@ void menu(int argc, char **argv) {
     }
 
 #if 0 
-    const char grafo_copy_path[] = "test/output/grafo.copy";
+    char graph_copy_path[] = "test/output/grafo.copy";
     printf("PRINTING GRAPH to '%s'\n", graph_copy_path);
     graph_print_to_stream(graph_copy_path, false, NULL, graph); 
     printf("DONE\n\n");
