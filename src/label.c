@@ -25,8 +25,12 @@ void vec_random_shuffle(uint32_t *vec, uint32_t size, uint32_t seed)
 {
     uint32_t n = size, j = 0, i = 0, step = 0;
 
-    if(size > 1000000)
-        n = 1000000;
+    if(size > 2000000)
+    {
+        n = size/3;
+        if(n < 2000000)
+            n = 2000000;
+    }
 
     unsigned int si = rand_r(&seed);  
     unsigned int sj = rand_r(&seed);

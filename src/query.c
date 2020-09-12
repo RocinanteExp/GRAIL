@@ -38,7 +38,10 @@ static void query_print_results_to_file(query_set *queries, uint32_t length, con
 static void init_vst_nodes(const uint32_t row_length, const uint32_t col_length);
 static void destroy_vst_nodes(const uint32_t row_length);
 
-static bool find_path_reachability(uint32_t source_id, uint32_t dest_id, Graph *graph, uint32_t *vst, uint32_t q_ind);
+#if !TEST
+static 
+#endif
+bool find_path_reachability(uint32_t source_id, uint32_t dest_id, Graph *graph, uint32_t *vst, uint32_t q_ind);
 
 static query_set *queries = NULL;
 static uint32_t **vst_nodes = NULL;
@@ -209,7 +212,10 @@ static bool is_a_possible_path(Node *source, Node *dest) {
     return true;
 }
 
-static bool find_path_reachability(uint32_t source_id, uint32_t dest_id, Graph *graph, uint32_t *vst, uint32_t q_ind){
+#if !TEST
+static 
+#endif
+bool find_path_reachability(uint32_t source_id, uint32_t dest_id, Graph *graph, uint32_t *vst, uint32_t q_ind) {
 
     if(source_id == dest_id)
         return true;

@@ -18,7 +18,7 @@ START_TEST (test_label_include)
 
     left = label_init(1, 9);
     right = label_init(1, 9);
-    res = label_include(left, right);
+    res = label_include(&left, &right);
     ck_assert_msg(
             res == true, 
             "left [%d, %d] should be included in right [%d, %d]", left.left, left.right, right.left, right.right
@@ -26,7 +26,7 @@ START_TEST (test_label_include)
 
     left = label_init(2,8);
     right = label_init(1,9);
-    res = label_include(left,right);
+    res = label_include(&left, &right);
     ck_assert_msg(
             res == true, 
             "left [%d, %d] should be included in right [%d, %d]", left.left, left.right, right.left, right.right
@@ -34,7 +34,7 @@ START_TEST (test_label_include)
 
     left = label_init(1,10);
     right = label_init(1,9);
-    res = label_include(left,right);
+    res = label_include(&left, &right);
     ck_assert_msg(
             res == false, 
             "left [%d, %d] should not be included in right [%d, %d]", left.left, left.right, right.left, right.right
@@ -42,7 +42,7 @@ START_TEST (test_label_include)
 
     left = label_init(1, 9);
     right = label_init(2, 9);
-    res = label_include(left,right);
+    res = label_include(&left, &right);
     ck_assert_msg(
             res == false, 
             "left [%d, %d] should not be included in right [%d, %d]", left.left, left.right, right.left, right.right
@@ -50,7 +50,7 @@ START_TEST (test_label_include)
 
     left = label_init(1, 10);
     right = label_init(2, 9);
-    res = label_include(left,right);
+    res = label_include(&left, &right);
     ck_assert_msg(
             res == false, 
             "left [%d, %d] should not be included in right [%d, %d]", left.left, left.right, right.left, right.right
@@ -97,8 +97,8 @@ START_TEST (test_label_generate_random_labels)
     
     for(int i = 0; i < 20; ++i) {
         Node* n = graph->nodes[i];
-        ck_assert_uint_eq((n->intervals[0]).left, left[i]);
-        ck_assert_uint_eq((n->intervals[0]).right, right[i]);
+        ck_assert_uint_eq(n->intervals[0].left, left[i]);
+        ck_assert_uint_eq(n->intervals[0].right, right[i]);
     }
 }
 END_TEST

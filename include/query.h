@@ -6,7 +6,7 @@
 #if TEST
 /* check if there is a path from "source_id" to "dest_id"
  */
-bool find_path_reachability(uint32_t source_id, uint32_t dest_id, Graph *graph, Bitmap *vst_nodes);
+bool find_path_reachability(uint32_t source_id, uint32_t dest_id, Graph *graph, uint32_t *vst_nodes, uint32_t q_ind);
 #endif
 
 /* check the rechability of the queries stored in the file at "filepath". 
