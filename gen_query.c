@@ -6,9 +6,10 @@ static void generate_query (int, int, char *);
 static void seed_ran (void);
 
 int main(int argc, char **argv) {
+
     if(argc != 4) {
-        fprintf(stderr, "error number of args\n");
-        exit(1);
+        fprintf(stderr, "Usage: %s <max_node_id> <num_queries> <filename>\n", argv[0]);
+        exit(-1);
     }
     
     seed_ran();
@@ -30,9 +31,7 @@ static int ran (int n1, int n2) {
    return r;
 }
 
-static void generate_query (
-  int v_n, int query_n, char *name
-  )
+static void generate_query (int v_n, int query_n, char *name)
 {
    int i, v1, v2;
    FILE *fp;
