@@ -63,7 +63,9 @@ void node_destroy_multiple(Graph *graph)
     for(uint32_t i = 0; i < graph->num_nodes; i++)
     {
         Node *curr_node = graph->nodes[i];
-        free(curr_node->children);
+        if(curr_node != NULL) {
+            free(curr_node->children);
+        }
     }
 
     for(uint32_t i = 0; i < graph->num_nodes; i++)
@@ -71,8 +73,11 @@ void node_destroy_multiple(Graph *graph)
         if(bitmap_test_bit(base_multi_nodes, i) == 1)
         {
             Node *curr_node = graph->nodes[i];
-            free(curr_node->intervals);
-            free(curr_node);
+            if(curr_node != NULL) 
+            {
+                free(curr_node->intervals);
+                free(curr_node);
+            }
         }
     }
 }
@@ -80,7 +85,7 @@ void node_destroy_multiple(Graph *graph)
 static void node_add_children(Node* node, const char* str)
 {
     uint32_t str_length = strlen(str);
-    int begin_index = 0;
+    int begin_index = -1;
     uint32_t numbers[4096] = {0};
     uint32_t next = 0;
     for(int i = 0; i < str_length; i++) {
@@ -112,13 +117,15 @@ static void node_add_children(Node* node, const char* str)
     }
 
     next = next - 1; // skip the node id
-    node->children = malloc(next * sizeof(uint32_t));
-    if(node->children == NULL) {
-        fprintf(stderr, "failed malloc on node_add_children\n");
-        exit(1);
+    if(next > 0) {
+        node->children = malloc(next * sizeof(uint32_t));
+        if(node->children == NULL) {
+            fprintf(stderr, "failed malloc on node_add_children\n");
+            exit(1);
+        }
+        memcpy(node->children, &numbers[1], next * sizeof(uint32_t));
+        node->num_children = next;
     }
-    memcpy(node->children, &numbers[1], next * sizeof(uint32_t));
-    node->num_children = next;
 }
 
 int32_t find_root_nodes(Graph* p_graph, Bitmap* b_incoming_edge_nodes)
@@ -184,7 +191,7 @@ Graph *graph_create(const char *filepath, const int num_intervals)
     p_graph->num_nodes = num_nodes;
     Bitmap *b_incoming_edge_nodes = bitmap_create(num_nodes);
 
-    p_graph->nodes = malloc(num_nodes * sizeof(Node*));
+    p_graph->nodes = calloc(num_nodes, sizeof(Node*));
     if(p_graph->nodes == NULL){
         free(p_graph);
         fprintf(stderr, "FAILED malloc p_graph->nodes at graph_create\n");
@@ -301,7 +308,7 @@ static void *thread_entry_point(void *thread_argument) {
                 *p_curr_iteration = *p_curr_iteration + max_valid_lines;
                 pthread_spin_unlock(p_lock);
 
-                Node* base_node;
+                Node *base_node;
                 if(max_valid_lines > 0) {
                     base_node = node_create_multiple(num_intervals, node_ids, max_valid_lines);
                     if(base_node == NULL) {
@@ -317,7 +324,7 @@ static void *thread_entry_point(void *thread_argument) {
                 }
 
                 for(int i = 0; i < max_valid_lines; i++) {
-                    Node* curr_node = base_node + i;
+                    Node *curr_node = base_node + i;
                     node_add_children(curr_node, lines[i]);
                     p_graph->nodes[node_ids[i]] = curr_node;
                     for(int j = 0; j < curr_node->num_children; j++) {
