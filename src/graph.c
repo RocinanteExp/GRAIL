@@ -4,43 +4,45 @@
 #include <time.h>
 #include <pthread.h>
 #include "graph.h"
-#define ALL_NODES -1
-#define MAGIC_NUMBER 1024
+#include "time_tracker.h"
+#define MAGIC_NUMBER 4096 
+#define BUFFER_SIZE 10240 
+
 static void* thread_entry_point(void *thread_argument);
-static void node_add_children(Node *node, const char* str);
+static void node_add_children(Node *node, const char *str);
+static void node_print_to_stdout(Node* node, bool verbose);
 
 struct thread_arg {
     FILE *fin;
     Graph *graph;
     pthread_spinlock_t *lock;
-    Bitmap* inc_edge_nodes;
+    Bitmap *inc_edge_nodes;
     uint32_t *curr_iteration;
     uint32_t num_intervals;
     uint32_t tot_nodes;
 };
 
-static Bitmap *base_node_addresses = NULL;
+// save the starting node of each multi node allocated by node_create_multiple 
+static Bitmap *base_multi_nodes = NULL;
 
-Node* node_create_multiple(uint32_t num_intervals, uint32_t* node_ids, uint32_t num_nodes)
+Node* node_create_multiple(uint32_t num_intervals, const uint32_t* node_ids, uint32_t num_nodes)
 {
     Node* base_node = malloc(num_nodes * sizeof(Node));
     if (base_node == NULL) {
-        fprintf(stdout, "malloc for base_node failed at node_create_multiple.\n%d a node_id", node_ids[0]);
+        fprintf(stderr, "FAILED malloc of base_node at node_create_multiple.\n%d a node_id", node_ids[0]);
         return NULL;
     }
 
     Label* base_interval = malloc(num_nodes * num_intervals * sizeof(Label));
     if (base_interval == NULL) {
-        fprintf(stdout, "malloc for interval failed at node_create_multiple.\n%d a node_id", node_ids[0]);
+        fprintf(stderr, "FAILED malloc of base_interval at node_create_multiple.\n%d a node_id", node_ids[0]);
         return NULL;
     }
 
     for (int i = 0; i < num_nodes ; i++) {
         Node* curr_node = base_node + i;
-        //fprintf(stdout, "curr_node %p\n", curr_node);
         curr_node->intervals = base_interval + i*num_intervals;
 
-        //curr_node->intervals = malloc(num_intervals * sizeof(Label));
         for(int j = 0; j < num_intervals; j++) {
             curr_node->intervals[j].left = UINT32_MAX;
             curr_node->intervals[j].right = UINT32_MAX;
@@ -66,19 +68,13 @@ void node_destroy_multiple(Graph *graph)
 
     for(uint32_t i = 0; i < graph->num_nodes; i++)
     {
-        if(bitmap_test_bit(base_node_addresses, i) == 1)
+        if(bitmap_test_bit(base_multi_nodes, i) == 1)
         {
             Node *curr_node = graph->nodes[i];
             free(curr_node->intervals);
             free(curr_node);
         }
     }
-}
-
-void node_destroy(Node* node)
-{
-    free(node->intervals);
-    free(node->children);
 }
 
 static void node_add_children(Node* node, const char* str)
@@ -109,7 +105,7 @@ static void node_add_children(Node* node, const char* str)
             break;
         }
         else {
-            fprintf(stdout, "UNKNOWN CHARACTER %d\n", str[i]);
+            fprintf(stdout, "Read an UNKNOWN CHARACTER %d\n", str[i]);
             fprintf(stdout, "Exiting...");
             exit(3);
         }
@@ -125,7 +121,7 @@ static void node_add_children(Node* node, const char* str)
     node->num_children = next;
 }
 
-int find_root_nodes(Graph* p_graph, Bitmap* b_incoming_edge_nodes)
+int32_t find_root_nodes(Graph* p_graph, Bitmap* b_incoming_edge_nodes)
 {
     uint32_t next = 0;
     uint32_t magic_number = MAGIC_NUMBER;
@@ -139,7 +135,7 @@ int find_root_nodes(Graph* p_graph, Bitmap* b_incoming_edge_nodes)
             if(p_graph->root_nodes == NULL){
                 free(p_graph->nodes);
                 free(p_graph);
-                fprintf(stderr, "FAILED realloc'ing 'graph->root_nodes' at find_root_nodes\n");
+                fprintf(stderr, "FAILED realloc graph->root_nodes at find_root_nodes\n");
                 return -1;
             }
         }
@@ -151,7 +147,9 @@ int find_root_nodes(Graph* p_graph, Bitmap* b_incoming_edge_nodes)
 Graph *graph_create(const char *filepath, const int num_intervals)
 {
 #if DEBUG
-    clock_t start = clock();
+    long before_time, after_time;
+    before_time = get_now();
+    fprintf(stdout, "CREATING GRAPH\n");
 #endif
 
     pthread_spinlock_t s_lock;
@@ -167,49 +165,54 @@ Graph *graph_create(const char *filepath, const int num_intervals)
 
     Graph *p_graph = malloc(sizeof(Graph));
     if(p_graph == NULL){
-        fprintf(stderr, "FAILED malloc'ing 'graph' at graph_create\n");
+        fprintf(stderr, "FAILED malloc p_graph at graph_create\n");
         return NULL;
     }
 
     // parsing the first line
     char curr_line[BUFF_SIZE];
-    fgets(curr_line, BUFF_SIZE, fin);
-    sscanf(curr_line, "%u", &num_nodes);
-#if DEBUG
-    printf("Num of nodes %u\n", num_nodes);
-#endif
+    char *ret = fgets(curr_line, BUFF_SIZE, fin);
+    if(ret == NULL) {
+        fprintf(stderr, "FAILED reading first line of file %s with fgets at graph_create\n", filepath);
+    }
+    int ret_val = sscanf(curr_line, "%u", &num_nodes);
+    if(ret_val != 1) {
+        fprintf(stderr, "BAD FILE FORMAT. READ AS FIRST LINE\n%s", curr_line);
+        exit(3);
+    }
+
     p_graph->num_nodes = num_nodes;
     Bitmap *b_incoming_edge_nodes = bitmap_create(num_nodes);
 
     p_graph->nodes = malloc(num_nodes * sizeof(Node*));
-    if(p_graph->nodes == NULL)
-    {
+    if(p_graph->nodes == NULL){
         free(p_graph);
-        fprintf(stderr, "FAILED malloc'ing 'graph->nodes' at graph_create\n");
+        fprintf(stderr, "FAILED malloc p_graph->nodes at graph_create\n");
         return NULL;
     }
 
-    base_node_addresses = bitmap_create(num_nodes); 
+    if(base_multi_nodes != NULL)
+        bitmap_destroy(base_multi_nodes); 
+    base_multi_nodes = bitmap_create(num_nodes); 
 
     int err = pthread_spin_init(&s_lock, 0);
     if(err != 0){
         fprintf(stderr, "FAILED pthread_spin_init at graph_create\n");
-        exit(1);
+        return NULL;
     };
 
     pthread_t thread_ids[MAX_THREADS_GRAPH];
-    struct thread_arg thread_arg = {
+    struct thread_arg t_arg = {
         .fin = fin, .graph = p_graph, .num_intervals = num_intervals,
         .curr_iteration = &curr_iteration, .tot_nodes = num_nodes, .lock = &s_lock,
         .inc_edge_nodes = b_incoming_edge_nodes
     };
 
     for(int i = 0; i < MAX_THREADS_GRAPH; i++) {
-        int err = pthread_create(&thread_ids[i], NULL, thread_entry_point, (void*) &thread_arg);
+        int err = pthread_create(&thread_ids[i], NULL, thread_entry_point, (void*) &t_arg);
         if(err != 0) {
             fprintf(stderr, "FAILED creating %d thread", i);
-            fprintf(stderr, "Exiting...\n");
-            exit(2);
+            return NULL;
         };
     }
 
@@ -223,15 +226,14 @@ Graph *graph_create(const char *filepath, const int num_intervals)
     if(p_graph->root_nodes == NULL){
         free(p_graph->nodes);
         free(p_graph);
-        fprintf(stderr, "FAILED malloc'ing 'graph->root_nodes' at graph_create\n");
+        fprintf(stderr, "FAILED malloc graph->root_nodes at graph_create\n");
         return NULL;
     }
 
     int32_t num_root_nodes = find_root_nodes(p_graph, b_incoming_edge_nodes);
     if(num_root_nodes == -1){
         fprintf(stdout, "FAILED find_root_nodes\n");
-        fprintf(stdout, "Exiting...\n");
-        exit(3);
+        return NULL;
     }
 
     p_graph->num_root_nodes = num_root_nodes;
@@ -241,8 +243,11 @@ Graph *graph_create(const char *filepath, const int num_intervals)
     fclose(fin);
 
 #if DEBUG
-    clock_t end = clock();
-    fprintf(stdout, "GRAPH GENERATION took %fs\n", (double)(end - start) / CLOCKS_PER_SEC);
+    after_time = get_now();
+    fprintf(stdout, "GRAPH has %u nodes\n", p_graph->num_nodes);
+    fprintf(stdout, "      has %u root nodes\n", p_graph->num_root_nodes);
+    fprintf(stdout, "      each node has %u intervals\n", p_graph->num_intervals);
+    fprintf(stdout, "GRAPH GENERATION took %ld ms\n\n", after_time - before_time);
 #endif
 
     return p_graph;
@@ -254,14 +259,14 @@ static uint32_t parse_node_id(const char* buf) {
     return node_id;
 }
 
-static void* thread_entry_point(void *thread_argument) {
+static void *thread_entry_point(void *thread_argument) {
 
-    const uint16_t BUFF_SIZE = 10240;
+    const uint16_t BUFF_SIZE = BUFFER_SIZE;
     const uint16_t NUM_LINES = MAX_THREADS_GRAPH;
     char lines[NUM_LINES][BUFF_SIZE];
     uint32_t node_ids[NUM_LINES];
 
-    struct thread_arg *arg = (struct thread_arg*) thread_argument;
+    struct thread_arg *arg = (struct thread_arg *) thread_argument;
     FILE *fin = arg->fin;
     uint32_t num_intervals = arg->num_intervals;
     uint32_t tot_nodes = arg->tot_nodes;
@@ -271,8 +276,9 @@ static void* thread_entry_point(void *thread_argument) {
     pthread_spinlock_t *p_lock = arg->lock;
 
 #if DEBUG
-    fprintf(stdout, "> Thread_id %ld args: num_intervals %d tot_nodes %d iteration %d\n", pthread_self(), num_intervals, tot_nodes, *p_curr_iteration);
+    fprintf(stdout, ">> Thread %ld args: num_intervals %d tot_nodes %d iteration %d\n", pthread_self(), num_intervals, tot_nodes, *p_curr_iteration);
 #endif
+// avoid lock overhead when reading for the first time p_curr_iteration
         while(true){
             if(*p_curr_iteration < tot_nodes) {
                 int max_valid_lines = NUM_LINES;
@@ -307,7 +313,7 @@ static void* thread_entry_point(void *thread_argument) {
                         free(p_graph);
                         return NULL;
                     }
-                    bitmap_set_bit(base_node_addresses, node_ids[0]);
+                    bitmap_set_bit(base_multi_nodes, node_ids[0]);
                 }
 
                 for(int i = 0; i < max_valid_lines; i++) {
@@ -330,17 +336,15 @@ static void* thread_entry_point(void *thread_argument) {
 
 void graph_destroy(Graph *graph)
 {
-
     if(graph == NULL)
         return;
 
     node_destroy_multiple(graph);
-    // not great when we call multiple times graph_create before graph_destroy
-    bitmap_destroy(base_node_addresses);
+    bitmap_destroy(base_multi_nodes);
+    base_multi_nodes = NULL;
     free(graph->root_nodes);
     free(graph->nodes);
     free(graph);
-
 }
 
 void graph_print_to_stdout(Graph* graph, bool verbose, uint32_t index_node)
@@ -367,7 +371,7 @@ void graph_print_to_stdout(Graph* graph, bool verbose, uint32_t index_node)
 
 }
 
-void node_print_to_stdout(Node* node, bool verbose){
+static void node_print_to_stdout(Node* node, bool verbose){
 
     fprintf(stdout, "%d: ", node->id);
     for(int i = 0; i < node->num_children; i++) {
@@ -386,7 +390,6 @@ void node_print_to_stdout(Node* node, bool verbose){
     }
 
     fprintf(stdout, "\n");
-
 }
 
 static int node_to_string(Node *node, char *buffer)
@@ -398,16 +401,11 @@ static int node_to_string(Node *node, char *buffer)
         strcat(buffer, mini);
     }
 
-    strcat(buffer, "#\xd\xa");
+    strcat(buffer, "#\n");
     return strlen(buffer);
 }
 
-bool graph_print_to_stream(bool to_stdout, char* graph_path_to, bool with_label, char* label_path_to, Graph* graph) {
-
-    if(to_stdout) {
-        graph_print_to_stdout(graph, with_label, ALL_NODES);
-        return true;
-    }
+bool graph_print_to_stream(char *graph_path_to, bool also_label, char *label_path_to, Graph *graph) {
 
     FILE *fout = fopen(graph_path_to, "wb");
     if(fout == NULL) {
@@ -418,7 +416,7 @@ bool graph_print_to_stream(bool to_stdout, char* graph_path_to, bool with_label,
     char buffer[10240 * 10];
     int curr_pos = 0;
 
-    fprintf(fout, "%u\xd\xa", graph->num_nodes);
+    fprintf(fout, "%u\n", graph->num_nodes);
     int i = 0;
     while(i < graph->num_nodes) {
         for(int j = 0; j < 10 && i < graph->num_nodes; j++) {
@@ -429,7 +427,7 @@ bool graph_print_to_stream(bool to_stdout, char* graph_path_to, bool with_label,
         curr_pos = 0;
     }
 
-    if(with_label)
+    if(also_label)
         label_print_to_file(label_path_to, graph);
 
     return true;

@@ -18,7 +18,7 @@ START_TEST (test_label_include)
 
     left = label_init(1, 9);
     right = label_init(1, 9);
-    res = label_include(left, right);
+    res = label_include(&left, &right);
     ck_assert_msg(
             res == true, 
             "left [%d, %d] should be included in right [%d, %d]", left.left, left.right, right.left, right.right
@@ -26,7 +26,7 @@ START_TEST (test_label_include)
 
     left = label_init(2,8);
     right = label_init(1,9);
-    res = label_include(left,right);
+    res = label_include(&left, &right);
     ck_assert_msg(
             res == true, 
             "left [%d, %d] should be included in right [%d, %d]", left.left, left.right, right.left, right.right
@@ -34,7 +34,7 @@ START_TEST (test_label_include)
 
     left = label_init(1,10);
     right = label_init(1,9);
-    res = label_include(left,right);
+    res = label_include(&left, &right);
     ck_assert_msg(
             res == false, 
             "left [%d, %d] should not be included in right [%d, %d]", left.left, left.right, right.left, right.right
@@ -42,7 +42,7 @@ START_TEST (test_label_include)
 
     left = label_init(1, 9);
     right = label_init(2, 9);
-    res = label_include(left,right);
+    res = label_include(&left, &right);
     ck_assert_msg(
             res == false, 
             "left [%d, %d] should not be included in right [%d, %d]", left.left, left.right, right.left, right.right
@@ -50,7 +50,7 @@ START_TEST (test_label_include)
 
     left = label_init(1, 10);
     right = label_init(2, 9);
-    res = label_include(left,right);
+    res = label_include(&left, &right);
     ck_assert_msg(
             res == false, 
             "left [%d, %d] should not be included in right [%d, %d]", left.left, left.right, right.left, right.right
@@ -58,11 +58,11 @@ START_TEST (test_label_include)
 }
 END_TEST 
 
-START_TEST (test_random_shuffle)
+START_TEST (test_vec_random_shuffle)
 {
     uint32_t vec[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
     
-    random_shuffle(vec, 10);
+    vec_random_shuffle(vec, 10, 1);
 
     bool is_all = true;
     bool found = false;
@@ -97,8 +97,8 @@ START_TEST (test_label_generate_random_labels)
     
     for(int i = 0; i < 20; ++i) {
         Node* n = graph->nodes[i];
-        ck_assert_uint_eq((n->intervals[0]).left, left[i]);
-        ck_assert_uint_eq((n->intervals[0]).right, right[i]);
+        ck_assert_uint_eq(n->intervals[0].left, left[i]);
+        ck_assert_uint_eq(n->intervals[0].right, right[i]);
     }
 }
 END_TEST
@@ -111,8 +111,8 @@ Suite* label_suite(void)
     tc_core = tcase_create("Core");
     tcase_add_test(tc_core, test_label_init);
     tcase_add_test(tc_core, test_label_include);
-    tcase_add_test(tc_core, test_random_shuffle);
-    tcase_add_test(tc_core, test_graph_randomize_labelling);
+    tcase_add_test(tc_core, test_vec_random_shuffle);
+    tcase_add_test(tc_core, test_label_generate_random_labels);
     suite_add_tcase(s, tc_core);
     return s;
 }

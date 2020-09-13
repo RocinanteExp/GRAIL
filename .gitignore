@@ -1,4 +1,3 @@
-bin/*.exe
-test/input/v500000*
-src/*.exe
-test/input/large
+bin/*
+test/input/*
+test/output/*

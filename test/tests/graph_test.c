@@ -4,7 +4,7 @@
 #include <stdio.h>
 START_TEST (test_graph_create)
 {
-    Graph* graph= graph_create("../test/input/grafo20.gra",5);
+    Graph* graph= graph_create("test/input/grafo20.gra",5);
     ck_assert(graph!=NULL);
     ck_assert_msg(graph->num_nodes==20,"value should have been 20 but it is %d",graph->num_nodes);
     ck_assert_msg(graph->nodes[0]->id==0,"value should have been 0 but it is %d",graph->nodes[0]->id);
@@ -36,7 +36,7 @@ int main(void)
     Suite* s;
     SRunner *sr;
     Graph *graph = graph_create("test/input/grafo20.gra", 2);
-    graph_print(graph, false, -1);
+    graph_print_to_stdout(graph, false, ALL_NODES);
     s=graph_suite();
     sr=srunner_create(s);
     srunner_run_all(sr,CK_NORMAL);

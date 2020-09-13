@@ -1,18 +1,21 @@
 #include <stdlib.h>
+#include <string.h>
 #include "bitmap.h"
 
-const static int SIZE_CHUNK = (sizeof(int) * 8);
+// sizeof(uint32_t) * 8
+const static uint32_t SIZE_CHUNK_IN_BITS = 32;
+const static uint32_t SHIFT_AMOUNT = 5;
 
 Bitmap* bitmap_create(size_t num_bits){
-   //computing the ceiling of num_bits / SIZE_CHUNK 
-   size_t array_length = (num_bits + SIZE_CHUNK - 1) / SIZE_CHUNK;
+   //computing the ceiling of num_bits / SIZE_CHUNK_IN_BITS 
+   size_t array_length = (num_bits + SIZE_CHUNK_IN_BITS - 1) >> SHIFT_AMOUNT; 
 
    Bitmap* ret_bitmap = malloc(sizeof(Bitmap));
    if(ret_bitmap == NULL){
        return NULL;
    }
 
-   ret_bitmap->bitset = calloc(array_length, SIZE_CHUNK);
+   ret_bitmap->bitset = calloc(array_length, sizeof(uint32_t));
    if(ret_bitmap->bitset == NULL){
         free(ret_bitmap);
         return NULL;
@@ -27,34 +30,37 @@ Bitmap* bitmap_create(size_t num_bits){
 
 void bitmap_set_bit(Bitmap* bitmap, size_t pos){
    
-   if(pos < 0 || pos >= bitmap->num_bits)
+   if((pos < 0) || (pos >= bitmap->num_bits))
        return;
 
-   bitmap->bitset[pos / SIZE_CHUNK] |= 1 << (pos % SIZE_CHUNK); 
+   const uint32_t index = pos >> SHIFT_AMOUNT;
+   const uint32_t offset = pos & 31;
+   bitmap->bitset[index] |= 1 << (31 - offset); 
 
 }
 
-void Bitmap_clear_bit(Bitmap* bitmap, size_t pos){
+void bitmap_clear_bit(Bitmap* bitmap, size_t pos){
 
    if(pos < 0 || pos >= bitmap->num_bits)
        return;
    
-   bitmap->bitset[pos / SIZE_CHUNK] &= 0 << (pos % SIZE_CHUNK); 
+   const uint32_t index = pos >> SHIFT_AMOUNT;
+   const uint32_t offset = pos & 31;
+   bitmap->bitset[index] &= ~(1 << (31 - offset)); 
 
 }
 
 int bitmap_test_bit(Bitmap* bitmap, size_t pos){
 
-    if(pos < 0 || pos >= bitmap->num_bits)
+    if((pos < 0) || (pos >= bitmap->num_bits))
         return -1;
 
-    int index = pos / SIZE_CHUNK;
-    int offset = pos % SIZE_CHUNK;
-    unsigned int flag = 1;
+    const uint32_t index = pos >> SHIFT_AMOUNT;
+    const uint32_t offset = pos & 31;
     
-    flag = flag << offset;
+    uint32_t flag = 1 << (31 - offset);
 
-    if(bitmap->bitset[index] & flag)
+    if((bitmap->bitset[index] & flag) != 0)
         return 1;
 
     return 0;
@@ -73,8 +79,9 @@ void bitmap_set_all(Bitmap* bitmap){
 
 void bitmap_clear_all(Bitmap* bitmap){
     
-   int allZeros = 0;
+   const uint32_t allZeros = 0;
 
+   //memset(bitmap->bitset, 0, sizeof(uint32_t) * bitmap->length);
    for(int i = 0; i < bitmap->length; i++){
         bitmap->bitset[i] = allZeros;
    }
