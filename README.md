@@ -3,9 +3,6 @@
 Group # 27 
 Students: Giovanni Tangredi s276086 , Francesco Xia s276509
 
-Link per scaricare il codice sorgente 
-https://github.com/giovannitangredi/SDPProjectQ2
-
 ## Suggested action for compiling and executing the project
 <ins>This project has been written and tested for a Linux machine</ins>
 
